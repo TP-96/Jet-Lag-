@@ -1,7 +1,7 @@
 import type { GameSettings, GameSize } from './game/config';
 import type { HiderState } from './game/deck';
 
-export type GameStatus = 'lobby' | 'hiding' | 'seeking' | 'endgame' | 'round_over';
+export type GameStatus = 'lobby' | 'hiding' | 'seeking' | 'endgame' | 'round_over' | 'finished';
 
 export interface Game {
   id: string;

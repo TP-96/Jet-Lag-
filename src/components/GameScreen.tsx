@@ -21,6 +21,7 @@ import TeamPanel from './TeamPanel';
 import StatusBar from './StatusBar';
 import { DrawModal, OverLimitModal } from './DrawModal';
 import { TrollOverlay, type TrollFx } from './TrollOverlay';
+import Celebration, { type CelebrationKind } from './Celebration';
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false, loading: () => <div className="center muted">Loading map…</div> });
 
@@ -43,10 +44,12 @@ export default function GameScreen({ code }: { code: string }) {
   const [fx, setFx] = useState<TrollFx | null>(null);
   const [lastChatRead, setLastChatRead] = useState(() => Date.now());
   const [joining, setJoining] = useState(false);
+  const [celebrate, setCelebrate] = useState<CelebrationKind | null>(null);
+  const closeCelebration = useCallback(() => setCelebrate(null), []);
   const now = useNow(1000);
 
   const myPlayer = players.find((p) => p.user_id === me);
-  const isHider = !!game && !!me && game.hider_id === me && game.status !== 'lobby';
+  const isHider = !!game && !!me && game.hider_id === me && game.status !== 'lobby' && game.status !== 'finished';
   const inRound = !!game && ['hiding', 'seeking', 'endgame'].includes(game.status);
 
   const { position, status: locStatus } = useLocationSharing(game?.id, me, !!myPlayer);
@@ -83,8 +86,11 @@ export default function GameScreen({ code }: { code: string }) {
     if (!game || lastStatus.current === game.status) return;
     const prev = lastStatus.current;
     lastStatus.current = game.status;
-    if (game.status === 'lobby' || game.status === 'round_over') setTab('team');
-    else if (prev === null || prev === 'lobby' || prev === 'round_over') setTab('map');
+    if (game.status === 'lobby' || game.status === 'round_over' || game.status === 'finished') setTab('team');
+    else if (prev === null || prev === 'lobby' || prev === 'round_over' || prev === 'finished') setTab('map');
+    // Celebrate transitions we watch happen live (not when reopening the app afterwards).
+    if (prev && (prev === 'seeking' || prev === 'endgame') && game.status === 'round_over') setCelebrate('found');
+    if (prev && prev !== 'finished' && game.status === 'finished') setCelebrate('winner');
     if (prev && game.status === 'seeking' && prev === 'hiding') {
       sounds.alarm();
       vibrate([300, 100, 300]);
@@ -312,7 +318,7 @@ export default function GameScreen({ code }: { code: string }) {
           {tab === 'cards' && <div className="panel">{isHider ? <HiderCards /> : <CursesPanel />}</div>}
           {tab === 'team' && (
             <div className="panel">
-              <TeamPanel />
+              <TeamPanel onCelebrate={setCelebrate} />
             </div>
           )}
         </div>
@@ -344,6 +350,7 @@ export default function GameScreen({ code }: { code: string }) {
       {isHider && hiderState?.state.pending && <DrawModal />}
       {isHider && hiderState && !hiderState.state.pending && hiderState.state.hand.length > hiderState.state.handLimit && <OverLimitModal />}
       <TrollOverlay fx={fx} />
+      {celebrate && <Celebration kind={celebrate} onClose={closeCelebration} />}
     </GameContext.Provider>
   );
 }

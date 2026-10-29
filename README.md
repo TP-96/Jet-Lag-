@@ -22,7 +22,10 @@ The longest hide wins.
 | 💬 **Chat** | Signal-style bubbles, replies, reactions and delete-for-everyone. Send photos, GIFs (GIPHY), stickers and locations. There is also a **seekers-only channel** the hider can't read. |
 | 📯 **Trolling** | Air horns, phone buzz plus screen shake, sad trombone, a full-screen "I SEE YOU" flash, confetti and ominous curse sounds. |
 | 🏆 **Scoring** | Your score is the time until you're found plus the time bonuses in your hand. The leaderboard tracks every round, and the hider rotates each round. |
-| 📶 **Tunnel-proof** | Uses realtime when connected. When the connection drops (subways!) it falls back to polling every 5 s. |
+| ⚡ **Fast updates** | Realtime pushes every change instantly. GPS uploads about once a second while moving, and map markers glide smoothly between positions. |
+| 📶 **Tunnel-proof** | When the realtime connection drops (subways!) the app polls live state every second, and everything else every 5 s. |
+| 🎉 **Celebrations** | A "FOUND!" animation with a target lock-on and a count-up of the hider's time. A winner podium with a falling crown when the host ends the game. |
+| 🌗 **Light & dark mode** | Follows the phone's setting by default, or pick Light or Dark on the home screen or Team tab. The map style follows the theme. |
 
 ## Game balance (city edition)
 
@@ -90,6 +93,7 @@ npx cap open ios
 4. The hider casts curses and plays power-ups from the Cards tab.
 5. Once seekers are inside the zone and off transit, they hit **🚨 Endgame**. The hider must freeze.
 6. A seeker reaches the hider and hits **🎯 Found**. The hider's time plus bonuses goes on the leaderboard.
+7. After the last round, the host taps **🏁 End game & crown the winner**.
 
 ## Tech
 - Next.js 15 (App Router) + React 19 + TypeScript. Everything runs client-side, so it hosts anywhere and exports statically.

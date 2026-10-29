@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { backToLobby, leaveGame, startRound, updateSettings } from '@/lib/actions';
+import { backToLobby, finishGame, leaveGame, resetGame, startRound, updateSettings } from '@/lib/actions';
+import { standings } from '@/lib/game/scoring';
 import { SIZES, formatDistance, formatDuration, type GameSize } from '@/lib/game/config';
 import { useGameCtx, useNow } from './GameContext';
+import ThemeToggle from './ThemeToggle';
+import type { CelebrationKind } from './Celebration';
 
-export default function TeamPanel() {
+export default function TeamPanel({ onCelebrate }: { onCelebrate: (k: CelebrationKind) => void }) {
   const { game, players, rounds, isHost, me, toast, locations, locStatus } = useGameCtx();
   const now = useNow(10_000);
   const hidCount = (id: string) => rounds.filter((r) => r.hider_id === id).length;
@@ -16,9 +19,10 @@ export default function TeamPanel() {
   const [busy, setBusy] = useState(false);
   const canStart = isHost && (game.status === 'lobby' || game.status === 'round_over') && players.length >= 2 && chosen;
 
-  const best = new Map<string, number>();
-  for (const r of rounds) best.set(r.hider_id, Math.max(best.get(r.hider_id) ?? 0, r.total_ms));
-  const board = [...players].sort((a, b) => (best.get(b.user_id) ?? -1) - (best.get(a.user_id) ?? -1));
+  const ranked = standings(players.map((p) => p.user_id), rounds);
+  const best = new Map(ranked.filter((r) => r.best >= 0).map((r) => [r.userId, r.best]));
+  const board = ranked.map((r) => players.find((p) => p.user_id === r.userId)!).filter(Boolean);
+  const champion = ranked[0] && ranked[0].best >= 0 ? players.find((p) => p.user_id === ranked[0].userId) : undefined;
 
   const share = async () => {
     const url = `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/game?code=${game.code}`;
@@ -38,7 +42,7 @@ export default function TeamPanel() {
           <div>
             <h2>{game.name}</h2>
             <div className="small muted">
-              Code <b style={{ letterSpacing: '.15em', color: 'var(--accent)' }}>{game.code}</b> · {SIZES[game.size].label}
+              Code <b style={{ letterSpacing: '.15em', color: 'var(--accent-text)' }}>{game.code}</b> · {SIZES[game.size].label}
             </div>
           </div>
           <button className="btn small" onClick={share}>
@@ -166,6 +170,31 @@ export default function TeamPanel() {
         </button>
       )}
 
+      {isHost && (game.status === 'lobby' || game.status === 'round_over') && rounds.length > 0 && (
+        <button
+          className="btn block"
+          onClick={() => confirm('End the game and crown the winner?') && finishGame(game, champion?.name ?? null).catch((e) => toast(e.message))}
+        >
+          🏁 End game &amp; crown the winner
+        </button>
+      )}
+
+      {game.status === 'finished' && (
+        <div className="card stack" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48 }}>👑</div>
+          <h2>{champion ? `${champion.avatar} ${champion.name} wins!` : 'Game over'}</h2>
+          {champion && <div className="muted">Best hide: {formatDuration(best.get(champion.user_id)!)}</div>}
+          <button className="btn primary block" onClick={() => onCelebrate('winner')}>
+            🎉 Replay the celebration
+          </button>
+          {isHost && (
+            <button className="btn block" onClick={() => confirm('Start a new game with the same players? Scores reset.') && resetGame(game).catch((e) => toast(e.message))}>
+              🔄 Play again
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="card">
         <h3>🏆 Leaderboard</h3>
         <p className="small muted">Score = time from seeking start until found + time bonus cards in hand. Longest hide wins.</p>
@@ -200,6 +229,11 @@ export default function TeamPanel() {
             </tbody>
           </table>
         )}
+      </div>
+
+      <div className="card row spread wrap">
+        <b>Appearance</b>
+        <ThemeToggle />
       </div>
 
       <div className="row">

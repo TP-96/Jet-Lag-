@@ -155,16 +155,44 @@ export function useGame(code: string): GameData {
     };
   }, [code, loadAll]);
 
-  // Fallback polling: fast while realtime is down (tunnels, flaky mobile data), slow safety net otherwise.
+  // Live state that matters second-to-second (clock, positions, questions, curses).
+  const loadFast = useCallback(async (gameId: string) => {
+    const sb = supabase();
+    const [g, l, q, e] = await Promise.all([
+      sb.from('games').select('*').eq('id', gameId).single(),
+      sb.from('locations').select('*').eq('game_id', gameId),
+      sb.from('questions').select('*').eq('game_id', gameId).order('asked_at'),
+      sb.from('effects').select('*').eq('game_id', gameId).order('cast_at'),
+    ]);
+    if (g.data) setGame(g.data as Game);
+    if (l.data) setLocations(l.data as PlayerLocation[]);
+    if (q.data) setQuestions(q.data as Question[]);
+    if (e.data) setEffects(e.data as Effect[]);
+  }, []);
+
+  // Realtime pushes changes instantly. If it drops (tunnels, flaky mobile data) poll the live state
+  // every second and everything else every 5 s; while connected, a 30 s full sync is just a safety net.
   useEffect(() => {
-    const id = setInterval(
-      () => {
-        if (gameIdRef.current && document.visibilityState === 'visible') loadAll(gameIdRef.current).catch(() => {});
-      },
-      live ? 60_000 : 5_000,
-    );
+    let tick = 0;
+    let busy = false;
+    const id = setInterval(async () => {
+      const gid = gameIdRef.current;
+      if (!gid || busy || document.visibilityState !== 'visible') return;
+      tick++;
+      busy = true;
+      try {
+        if (live) {
+          if (tick % 30 === 0) await loadAll(gid);
+        } else if (tick % 5 === 0) await loadAll(gid);
+        else await loadFast(gid);
+      } catch {
+        // offline — try again next tick
+      } finally {
+        busy = false;
+      }
+    }, 1000);
     return () => clearInterval(id);
-  }, [live, loadAll]);
+  }, [live, loadAll, loadFast]);
 
   // Keep only the current round's hider state.
   const currentHiderState = useMemo(

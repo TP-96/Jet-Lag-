@@ -13,7 +13,7 @@ create table if not exists public.games (
   name text not null default 'Hide + Seek',
   size text not null default 'small' check (size in ('small', 'medium', 'large')),
   settings jsonb not null default '{}'::jsonb,
-  status text not null default 'lobby' check (status in ('lobby', 'hiding', 'seeking', 'endgame', 'round_over')),
+  status text not null default 'lobby',
   round int not null default 0,
   hider_id uuid,
   hide_started_at timestamptz,
@@ -23,6 +23,11 @@ create table if not exists public.games (
   move_until timestamptz,
   created_at timestamptz not null default now()
 );
+
+-- (Re)apply the status check so re-running this file upgrades older databases.
+alter table public.games drop constraint if exists games_status_check;
+alter table public.games add constraint games_status_check
+  check (status in ('lobby', 'hiding', 'seeking', 'endgame', 'round_over', 'finished'));
 
 create table if not exists public.players (
   game_id uuid not null references public.games (id) on delete cascade,
@@ -146,7 +151,7 @@ language sql stable security definer set search_path = public as $$
     owner = auth.uid()
     or exists (
       select 1 from games gm where gm.id = g and (
-        gm.status in ('lobby', 'round_over')
+        gm.status in ('lobby', 'round_over', 'finished')
         or (
           owner is distinct from gm.hider_id
           and (auth.uid() is distinct from gm.hider_id or coalesce((gm.settings ->> 'hiderSeesSeekers')::boolean, false))

@@ -50,6 +50,21 @@ export const sounds = {
   curse() {
     [220, 207, 196, 185].forEach((f, i) => tone(f, i * 0.18, 0.4, 'square', 0.1));
   },
+  found() {
+    [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.09, 0.25, 'triangle', 0.18));
+    tone(1047, 0.4, 0.6, 'triangle', 0.15);
+    tone(1319, 0.4, 0.6, 'sine', 0.1);
+  },
+  fanfare() {
+    const notes: [number, number, number][] = [
+      [523, 0, 0.18], [523, 0.2, 0.12], [523, 0.34, 0.12], [698, 0.5, 0.5],
+      [880, 1.05, 0.18], [784, 1.25, 0.18], [880, 1.45, 0.18], [1047, 1.65, 0.9],
+    ];
+    notes.forEach(([f, t, d]) => {
+      tone(f, t, d, 'sawtooth', 0.09);
+      tone(f / 2, t, d, 'triangle', 0.08);
+    });
+  },
   alarm() {
     for (let i = 0; i < 6; i++) tone(i % 2 ? 660 : 880, i * 0.2, 0.18, 'square', 0.12);
   },

@@ -2,10 +2,11 @@
 
 import { declareEndgame, markFound } from '@/lib/actions';
 import { SIZES, formatDuration } from '@/lib/game/config';
+import { standings } from '@/lib/game/scoring';
 import { useGameCtx } from './GameContext';
 
 export default function StatusBar({ now }: { now: number }) {
-  const { game, isHider, myPlayer, player, rounds, toast, live } = useGameCtx();
+  const { game, isHider, myPlayer, player, players, rounds, toast, live } = useGameCtx();
   const hider = player(game.hider_id);
   let label = 'Lobby';
   let clock = `Round ${game.round}`;
@@ -25,6 +26,14 @@ export default function StatusBar({ now }: { now: number }) {
     label = `Round ${game.round} over`;
     clock = r ? formatDuration(r.total_ms) : game.found_at && game.seek_started_at ? formatDuration(new Date(game.found_at).getTime() - new Date(game.seek_started_at).getTime()) : '—';
     sub = r ? `incl. +${Math.round(r.bonus_ms / 60000)}m bonus` : 'waiting for hider’s bonus…';
+  }
+
+  if (game.status === 'finished') {
+    const top = standings(players.map((p) => p.user_id), rounds)[0];
+    const champ = top && top.best >= 0 ? player(top.userId) : undefined;
+    label = 'Game over';
+    clock = champ ? `👑 ${champ.name}` : '🏁';
+    sub = champ ? `Champion · best hide ${formatDuration(top.best)}` : `${rounds.length} rounds played`;
   }
 
   const endgame = async () => {
@@ -59,8 +68,8 @@ export default function StatusBar({ now }: { now: number }) {
               🎯 Found
             </button>
           )}
-          <span className={`tag ${myPlayer?.role === 'hider' && game.status !== 'lobby' ? 'hider' : 'seeker'}`}>
-            {myPlayer?.avatar} {game.status === 'lobby' ? 'In lobby' : isHider ? 'Hider' : 'Seeker'}
+          <span className={`tag ${isHider ? 'hider' : 'seeker'}`}>
+            {myPlayer?.avatar} {game.status === 'lobby' || game.status === 'finished' ? 'Player' : isHider ? 'Hider' : 'Seeker'}
           </span>
         </div>
       </div>

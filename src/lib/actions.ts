@@ -159,6 +159,19 @@ export async function recordRound(game: Game, bonusMinutes: number) {
   check(await sb.from('rounds').insert({ game_id: game.id, round: game.round, hider_id: game.hider_id, seek_ms, bonus_ms, total_ms: seek_ms + bonus_ms }));
 }
 
+export async function finishGame(game: Game, winnerName: string | null) {
+  check(await supabase().from('games').update({ status: 'finished' }).eq('id', game.id).in('status', ['lobby', 'round_over']));
+  await systemMessage(game.id, winnerName ? `👑 Game over! ${winnerName} is the champion!` : '🏁 Game over!', { event: 'finished' });
+}
+
+/** Start over with the same players: clears scores and round history. */
+export async function resetGame(game: Game) {
+  const sb = supabase();
+  check(await sb.from('rounds').delete().eq('game_id', game.id));
+  check(await sb.from('games').update({ status: 'lobby', round: 0, hider_id: null }).eq('id', game.id));
+  await systemMessage(game.id, '🔄 New game! Scores have been reset.');
+}
+
 export async function backToLobby(game: Game) {
   check(await supabase().from('games').update({ status: 'lobby' }).eq('id', game.id));
 }

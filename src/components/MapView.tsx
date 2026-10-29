@@ -4,6 +4,7 @@ import L from 'leaflet';
 import { useEffect, useRef, useState } from 'react';
 import { SIZES, formatDistance } from '@/lib/game/config';
 import { thermometerExcludedPolygon } from '@/lib/game/geo';
+import { useTheme } from '@/lib/theme';
 import { useGameCtx } from './GameContext';
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -29,6 +30,10 @@ export default function MapView() {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const playersLayer = useRef<L.LayerGroup | null>(null);
+  const markers = useRef(new Map<string, { marker: L.Marker; ring: L.Circle | null; key: string }>());
+  const bases = useRef<{ dark: L.TileLayer; light: L.TileLayer } | null>(null);
+  const autoBase = useRef(true);
+  const { theme } = useTheme();
   const qLayer = useRef<L.LayerGroup | null>(null);
   const zoneLayer = useRef<L.LayerGroup | null>(null);
   const centred = useRef(false);
@@ -46,6 +51,10 @@ export default function MapView() {
       maxZoom: 20,
       attribution: '© OpenStreetMap contributors © CARTO',
     });
+    const light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 20,
+      attribution: '© OpenStreetMap contributors © CARTO',
+    });
     const transit = L.tileLayer('https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: 'Map © memomaps.de, data © OpenStreetMap contributors',
@@ -55,44 +64,102 @@ export default function MapView() {
       opacity: 0.8,
       attribution: '© OpenRailwayMap',
     });
-    dark.addTo(m);
-    L.control.layers({ Dark: dark, Streets: streets, 'Transit lines': transit }, { 'Rail overlay': rail }, { position: 'topright' }).addTo(m);
+    const isLight = document.documentElement.dataset.theme === 'light' ||
+      (!document.documentElement.dataset.theme && window.matchMedia('(prefers-color-scheme: light)').matches);
+    (isLight ? light : dark).addTo(m);
+    bases.current = { dark, light };
+    L.control
+      .layers({ Dark: dark, Light: light, Streets: streets, 'Transit lines': transit }, { 'Rail overlay': rail }, { position: 'topright' })
+      .addTo(m);
+    // Dark/Light keep following the app theme; picking Streets or Transit sticks.
+    m.on('baselayerchange', (e: L.LayersControlEvent) => {
+      autoBase.current = e.name === 'Dark' || e.name === 'Light';
+    });
     L.control.zoom({ position: 'topright' }).addTo(m);
     playersLayer.current = L.layerGroup().addTo(m);
     qLayer.current = L.layerGroup().addTo(m);
     zoneLayer.current = L.layerGroup().addTo(m);
     m.on('dragstart', () => setFollow(false));
     map.current = m;
+    const ms = markers.current;
     return () => {
       m.remove();
       map.current = null;
+      ms.clear();
     };
   }, []);
 
-  // Player markers
+  // Follow the app's light/dark theme unless the player picked a base map.
+  useEffect(() => {
+    const m = map.current;
+    const b = bases.current;
+    if (!m || !b || !autoBase.current) return;
+    const want = theme === 'light' ? b.light : b.dark;
+    const other = theme === 'light' ? b.dark : b.light;
+    if (m.hasLayer(want)) return;
+    if (m.hasLayer(other)) m.removeLayer(other);
+    want.addTo(m);
+  }, [theme]);
+
+  // Player markers. Markers persist between GPS updates so CSS can glide them to the new spot.
   useEffect(() => {
     const layer = playersLayer.current;
     if (!layer || !map.current) return;
-    layer.clearLayers();
+    const seen = new Set<string>();
+    const place = (id: string, ll: L.LatLngTuple, icon: () => L.DivIcon, key: string, tip: string, accuracy: number | null, color: string, z = 0) => {
+      seen.add(id);
+      let entry = markers.current.get(id);
+      if (!entry) {
+        entry = { marker: L.marker(ll, { icon: icon(), zIndexOffset: z }).addTo(layer), ring: null, key };
+        markers.current.set(id, entry);
+      } else {
+        entry.marker.setLatLng(ll);
+        if (entry.key !== key) {
+          entry.marker.setIcon(icon());
+          entry.key = key;
+        }
+      }
+      entry.marker.bindTooltip(tip, { direction: 'top', offset: [0, -16] });
+      if (accuracy && accuracy > 40) {
+        if (entry.ring) entry.ring.setLatLng(ll).setRadius(accuracy);
+        else entry.ring = L.circle(ll, { radius: accuracy, color, weight: 1, fillOpacity: 0.05, interactive: false }).addTo(layer);
+      } else if (entry.ring) {
+        entry.ring.remove();
+        entry.ring = null;
+      }
+    };
+
     for (const loc of locations) {
       if (loc.user_id === me) continue; // drawn from live GPS below
       const p = player(loc.user_id);
       if (!p) continue;
       const stale = Date.now() - new Date(loc.updated_at).getTime() > 180_000;
       const isTheHider = loc.user_id === game.hider_id && game.status !== 'lobby';
-      L.marker([loc.lat, loc.lng], { icon: pinIcon(isTheHider ? '🫣' : p.avatar, p.color, stale ? 'stale' : '') })
-        .bindTooltip(`${esc(p.name)}${isTheHider ? ' (hider)' : ''} · ${ago(loc.updated_at)}`, { direction: 'top', offset: [0, -16] })
-        .addTo(layer);
-      if (loc.accuracy && loc.accuracy > 40) L.circle([loc.lat, loc.lng], { radius: loc.accuracy, color: p.color, weight: 1, fillOpacity: 0.05 }).addTo(layer);
+      const avatar = isTheHider ? '🫣' : p.avatar;
+      place(
+        loc.user_id,
+        [loc.lat, loc.lng],
+        () => pinIcon(avatar, p.color, stale ? 'stale' : ''),
+        `${avatar}|${p.color}|${stale}`,
+        `${esc(p.name)}${isTheHider ? ' (hider)' : ''} · ${ago(loc.updated_at)}`,
+        loc.accuracy,
+        p.color,
+      );
     }
     if (position) {
       const mine = player(me);
-      const ll: L.LatLngExpression = [position.coords.latitude, position.coords.longitude];
-      L.marker(ll, { icon: pinIcon(mine?.avatar ?? '🙂', '#3d8bff', 'me'), zIndexOffset: 1000 }).bindTooltip('You').addTo(layer);
+      const ll: L.LatLngTuple = [position.coords.latitude, position.coords.longitude];
+      place('__me', ll, () => pinIcon(mine?.avatar ?? '🙂', '#3d8bff', 'me'), mine?.avatar ?? '', 'You', position.coords.accuracy, '#3d8bff', 1000);
       if (!centred.current) {
         map.current.setView(ll, 14);
         centred.current = true;
-      } else if (follow) map.current.panTo(ll);
+      } else if (follow) map.current.panTo(ll, { animate: true, duration: 1 });
+    }
+    for (const [id, entry] of markers.current) {
+      if (seen.has(id)) continue;
+      entry.marker.remove();
+      entry.ring?.remove();
+      markers.current.delete(id);
     }
   }, [locations, position, player, me, game.hider_id, game.status, follow]);
 

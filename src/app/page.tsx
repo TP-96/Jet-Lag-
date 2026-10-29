@@ -8,6 +8,7 @@ import { SIZES, type GameSize, type Units } from '@/lib/game/config';
 import { AVATARS, COLORS, loadProfile, recentGames, rememberGame, saveProfile } from '@/lib/profile';
 import { isConfigured } from '@/lib/supabase';
 import type { Profile } from '@/lib/actions';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Home() {
   const router = useRouter();
@@ -56,6 +57,9 @@ export default function Home() {
 
   return (
     <main className="home">
+      <div className="row" style={{ justifyContent: 'flex-end' }}>
+        <ThemeToggle />
+      </div>
       <div className="hero">
         <h1 className="brand">
           HIDE <span>+</span> SEEK

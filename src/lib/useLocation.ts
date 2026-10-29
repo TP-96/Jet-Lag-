@@ -7,8 +7,8 @@ import { haversine } from './game/geo';
 export type LocationStatus = 'idle' | 'prompt' | 'active' | 'denied' | 'unavailable';
 
 /**
- * Watches the device GPS and shares it with the game. Uploads at most every 8 s,
- * or immediately after moving 30 m — enough for live tracking without draining the battery.
+ * Watches the device GPS and shares it with the game: about once a second while moving
+ * (phones deliver ~1 fix/s), plus a heartbeat every 5 s while standing still.
  */
 export function useLocationSharing(gameId: string | undefined, uid: string | null, enabled: boolean) {
   const [position, setPosition] = useState<GeolocationPosition | null>(null);
@@ -29,7 +29,7 @@ export function useLocationSharing(gameId: string | undefined, uid: string | nul
         const now = Date.now();
         const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         const moved = last.current ? haversine(last.current, p) : Infinity;
-        if (!last.current || now - last.current.t > 8000 || moved > 30) {
+        if (!last.current || (now - last.current.t >= 1000 && moved > 2) || now - last.current.t > 5000) {
           last.current = { t: now, ...p };
           upsertLocation(gameId, uid, pos).catch(() => {
             last.current = null; // retry on the next fix
@@ -37,7 +37,7 @@ export function useLocationSharing(gameId: string | undefined, uid: string | nul
         }
       },
       (err) => setStatus(err.code === err.PERMISSION_DENIED ? 'denied' : 'unavailable'),
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 },
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 30000 },
     );
     return () => navigator.geolocation.clearWatch(id);
   }, [gameId, uid, enabled]);

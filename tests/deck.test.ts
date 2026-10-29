@@ -72,3 +72,18 @@ describe('hider deck', () => {
     expect(overLimit(s)).toBe(0);
   });
 });
+
+import { standings } from '@/lib/game/scoring';
+
+describe('standings', () => {
+  it('ranks by best hide and puts players who never hid last', () => {
+    const s = standings(['a', 'b', 'c'], [
+      { hider_id: 'a', total_ms: 1000 },
+      { hider_id: 'b', total_ms: 5000 },
+      { hider_id: 'a', total_ms: 7000 },
+    ]);
+    expect(s.map((x) => x.userId)).toEqual(['a', 'b', 'c']);
+    expect(s[0]).toEqual({ userId: 'a', best: 7000, rounds: 2 });
+    expect(s[2].best).toBe(-1);
+  });
+});

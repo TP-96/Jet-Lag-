@@ -370,7 +370,7 @@ export default function QuestionsPanel() {
   const roundQs = questions.filter((q) => q.round === game.round);
   const pending = roundQs.find((q) => q.status === 'pending');
 
-  if (game.status === 'lobby') return <p className="muted">Questions open once a round starts.</p>;
+  if (game.status === 'lobby' || game.status === 'finished') return <p className="muted">Questions open once a round starts.</p>;
 
   return (
     <div className="stack">

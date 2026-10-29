@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import 'leaflet/dist/leaflet.css';
 import './globals.css';
+import { THEME_BOOT_SCRIPT } from '@/lib/themeBoot';
 
 export const metadata: Metadata = {
   title: 'Hide + Seek',
@@ -15,12 +16,18 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
-  themeColor: '#0b0d12',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f3f4f7' },
+    { media: '(prefers-color-scheme: dark)', color: '#0b0d12' },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body>{children}</body>
     </html>
   );
