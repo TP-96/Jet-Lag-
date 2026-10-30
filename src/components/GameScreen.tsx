@@ -21,6 +21,7 @@ import HiderCards from './HiderCards';
 import CursesPanel from './CursesPanel';
 import TeamPanel from './TeamPanel';
 import StatusBar from './StatusBar';
+import Icon from './Icon';
 import { DrawModal, OverLimitModal } from './DrawModal';
 import { TrollOverlay, type TrollFx } from './TrollOverlay';
 import Celebration, { type CelebrationKind } from './Celebration';
@@ -356,15 +357,15 @@ export default function GameScreen({ code }: { code: string }) {
         <nav className="tabs">
           {(
             [
-              ['map', '🗺️', 'Map', 0],
-              ['chat', '💬', 'Chat', unread],
-              ['questions', '❓', isHider ? 'Answer' : 'Ask', pendingQ],
-              ['cards', isHider ? '🃏' : '💀', isHider ? 'Cards' : 'Curses', effects.filter((e) => e.round === game.round && !e.cleared_at).length],
-              ['team', '👥', game.status === 'lobby' ? 'Lobby' : 'Team', 0],
+              ['map', 'map', 'Map', 0],
+              ['chat', 'chat', 'Chat', unread],
+              ['questions', 'ask', isHider ? 'Answer' : 'Ask', pendingQ],
+              ['cards', isHider ? 'cards' : 'curse', isHider ? 'Cards' : 'Curses', effects.filter((e) => e.round === game.round && !e.cleared_at).length],
+              ['team', 'team', game.status === 'lobby' ? 'Lobby' : 'Team', 0],
             ] as [Tab, string, string, number][]
           ).map(([id, ic, label, badge]) => (
-            <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
-              <span className="ic">{ic}</span>
+            <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)} aria-current={tab === id ? 'page' : undefined}>
+              <Icon name={ic} />
               {label}
               {badge > 0 && tab !== id && <span className="badge">{badge}</span>}
             </button>

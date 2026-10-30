@@ -31,7 +31,7 @@ export function CardView({
   if (d.kind === 'time') {
     return (
       <div className={cls} onClick={onClick}>
-        <div className="kind">⏱️ Time bonus{card.includes('#dup') ? ' · copy' : ''}</div>
+        <div className="kind">Time bonus{card.includes('#dup') ? ' (copy)' : ''}</div>
         <div className="big">+{d.minutes[size]}m</div>
         <div className="body muted">Added to your hiding time if you hold it when found.</div>
       </div>
@@ -48,7 +48,7 @@ export function CardView({
   }
   return (
     <div className={cls} onClick={onClick}>
-      <div className="kind">💀 Curse{d.durationMin ? ` · ${d.durationMin} min` : ''}</div>
+      <div className="kind">Curse{d.durationMin ? `, ${d.durationMin} min` : ''}</div>
       <div className="title">{d.name}</div>
       <div className="body">{d.effect}</div>
       <div className="cost">

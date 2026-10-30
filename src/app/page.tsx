@@ -9,6 +9,7 @@ import { AVATARS, COLORS, loadProfile, recentGames, rememberGame, saveProfile } 
 import { isConfigured } from '@/lib/supabase';
 import type { Profile } from '@/lib/actions';
 import ThemeToggle from '@/components/ThemeToggle';
+import { CATEGORIES, CATEGORY_ORDER } from '@/lib/game/questions';
 
 export default function Home() {
   const router = useRouter();
@@ -57,15 +58,24 @@ export default function Home() {
 
   return (
     <main className="home">
-      <div className="row" style={{ justifyContent: 'flex-end' }}>
+      <div className="home-top">
         <ThemeToggle />
       </div>
-      <div className="hero">
-        <h1 className="brand">
-          HIDE <span>+</span> SEEK
-        </h1>
-        <p>The Jet Lag-style transit game for your city. One hides, everyone else hunts — using only public transit.</p>
-      </div>
+      <header className="station-sign">
+        <div className="sign-body">
+          <h1>
+            Hide <span className="plus" aria-label="and">+</span>
+            <br />
+            Seek
+          </h1>
+          <p>One player hides somewhere on your city’s transit. Everyone else rides out to find them.</p>
+        </div>
+        <div className="route-stripe" aria-hidden="true">
+          {CATEGORY_ORDER.map((id) => (
+            <i key={id} style={{ background: CATEGORIES[id].color }} />
+          ))}
+        </div>
+      </header>
 
       {!isConfigured && (
         <div className="card banner warn" style={{ display: 'block' }}>
@@ -75,10 +85,14 @@ export default function Home() {
       )}
 
       <section className="card stack">
+        <h2>You</h2>
         <label className="field">
-          Your name
+          Name
           <input className="input" value={profile.name} maxLength={24} placeholder="e.g. Sam" onChange={(e) => update({ name: e.target.value })} />
         </label>
+        <div className="muted small" style={{ fontWeight: 600, marginBottom: -4 }}>
+          Map pin
+        </div>
         <div className="avatar-grid">
           {AVATARS.map((a) => (
             <button key={a} className={profile.avatar === a ? 'on' : ''} onClick={() => update({ avatar: a })} aria-label={`avatar ${a}`}>
@@ -93,21 +107,21 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="seg">
-        <button className={mode === 'join' ? 'on' : ''} onClick={() => setMode('join')}>
-          Join a game
-        </button>
-        <button className={mode === 'create' ? 'on' : ''} onClick={() => setMode('create')}>
-          Create a game
-        </button>
-      </div>
-
       <section className="card stack">
+        <div className="seg" role="tablist">
+          <button role="tab" aria-selected={mode === 'join'} className={mode === 'join' ? 'on' : ''} onClick={() => setMode('join')}>
+            Join a game
+          </button>
+          <button role="tab" aria-selected={mode === 'create'} className={mode === 'create' ? 'on' : ''} onClick={() => setMode('create')}>
+            Start a new game
+          </button>
+        </div>
         {mode === 'join' ? (
           <>
             <input
               className="input code-input"
-              placeholder="CODE"
+              placeholder="Code"
+              aria-label="Game code"
               value={code}
               maxLength={6}
               onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
@@ -153,12 +167,12 @@ export default function Home() {
         )}
         {err && <div className="banner danger" style={{ borderRadius: 10 }}>{err}</div>}
         <button className="btn primary block" disabled={busy || !isConfigured} onClick={go}>
-          {busy ? 'Connecting…' : mode === 'join' ? 'Join game' : 'Create game'}
+          {busy ? 'Connecting…' : mode === 'join' ? 'Join game' : 'Start game'}
         </button>
       </section>
 
-      <p className="small muted" style={{ textAlign: 'center' }}>
-        <Link href="/rules">How to play · rules · all cards</Link>
+      <p className="home-foot">
+        <Link href="/rules">How to play, and every card in the deck</Link>
         <br />
         Fan-made game inspired by Jet Lag: The Game. Not affiliated with Wendover Productions.
       </p>

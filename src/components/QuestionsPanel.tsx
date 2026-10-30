@@ -165,7 +165,13 @@ function SeekerAsk({ roundQs }: { roundQs: Question[] }) {
         {CATEGORY_ORDER.map((id) => {
           const c = CATEGORIES[id];
           return (
-            <button key={id} className={`cat ${cat === id ? 'on' : ''}`} style={{ borderTop: `4px solid ${c.color}` }} onClick={() => setCat(cat === id ? null : id)}>
+            <button
+              key={id}
+              className={`cat ${cat === id ? 'on' : ''}`}
+              style={{ '--c': c.color } as React.CSSProperties}
+              aria-pressed={cat === id}
+              onClick={() => setCat(cat === id ? null : id)}
+            >
               <span className="ic">{c.icon}</span>
               <span className="nm">{c.name}</span>
               <span className="cost">

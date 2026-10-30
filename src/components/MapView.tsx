@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 import { SIZES, formatDistance } from '@/lib/game/config';
 import { thermometerExcludedPolygon } from '@/lib/game/geo';
 import { isValidBoundary, pointInBoundary } from '@/lib/game/geofence';
-import { useTheme } from '@/lib/theme';
 import { MODE_WEIGHT, contains, fetchTransit, padBBox, type BBox, type TransitData } from '@/lib/transit';
 import { useGameCtx } from './GameContext';
 
@@ -70,14 +69,12 @@ export default function MapView() {
   const map = useRef<L.Map | null>(null);
   const playersLayer = useRef<L.LayerGroup | null>(null);
   const markers = useRef(new Map<string, { marker: L.Marker; ring: L.Circle | null; key: string; permanent: boolean }>());
-  const bases = useRef<{ dark: L.Layer; light: L.Layer; streets: L.Layer; satellite: L.Layer; transitMap: L.Layer } | null>(null);
+  const bases = useRef<{ streets: L.Layer; satellite: L.Layer; transitMap: L.Layer } | null>(null);
   const transitGroup = useRef<L.LayerGroup | null>(null);
   const transitAddedByLive = useRef(false);
   const [transitStatus, setTransitStatus] = useState<'off' | 'zoom' | 'loading' | 'ok' | 'error'>('off');
   const [live, setLive] = useState(false);
   const liveFollow = useRef(true);
-  const autoBase = useRef(true);
-  const { theme } = useTheme();
   const qLayer = useRef<L.LayerGroup | null>(null);
   const zoneLayer = useRef<L.LayerGroup | null>(null);
   const boundaryLayer = useRef<L.LayerGroup | null>(null);
@@ -89,17 +86,11 @@ export default function MapView() {
   useEffect(() => {
     if (!el.current || map.current) return;
     const m = L.map(el.current, { zoomControl: false, attributionControl: true }).setView([43.2557, -79.8711], 13);
-    const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // OpenStreetMap's own tiles: free, no API key. In dark mode a CSS filter (--map-filter) turns them into a night map.
+    const streets = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '© OpenStreetMap contributors',
-    });
-    const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 20,
-      attribution: '© OpenStreetMap contributors © CARTO',
-    });
-    const light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 20,
-      attribution: '© OpenStreetMap contributors © CARTO',
+      className: 'osm-tiles',
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     });
     // OpenStreetMap has no aerial imagery, so satellite comes from Esri World Imagery (free, attribution required),
     // with Esri's place/road labels on top.
@@ -127,21 +118,15 @@ export default function MapView() {
     const transit = L.layerGroup();
     transit.getAttribution = () => 'Transit data © OpenStreetMap contributors';
     transitGroup.current = transit;
-    const isLight = document.documentElement.dataset.theme === 'light' ||
-      (!document.documentElement.dataset.theme && window.matchMedia('(prefers-color-scheme: light)').matches);
-    (isLight ? light : dark).addTo(m);
-    bases.current = { dark, light, streets, satellite, transitMap };
+    streets.addTo(m);
+    bases.current = { streets, satellite, transitMap };
     L.control
       .layers(
-        { Dark: dark, Light: light, Streets: streets, Satellite: satellite, 'Transit map': transitMap },
-        { 'Transit lines & stops (OSM)': transit, 'Rail detail': rail },
+        { Map: streets, Satellite: satellite, 'Transit map': transitMap },
+        { 'Transit lines & stops': transit, 'Rail detail': rail },
         { position: 'topright' },
       )
       .addTo(m);
-    // Dark/Light keep following the app theme; picking any other base map sticks.
-    m.on('baselayerchange', (e: L.LayersControlEvent) => {
-      autoBase.current = e.name === 'Dark' || e.name === 'Light';
-    });
     const onOverlay = (e: L.LayersControlEvent) => {
       if (e.layer === transit) {
         transitAddedByLive.current = false;
@@ -170,18 +155,6 @@ export default function MapView() {
       ms.clear();
     };
   }, []);
-
-  // Follow the app's light/dark theme unless the player picked a base map.
-  useEffect(() => {
-    const m = map.current;
-    const b = bases.current;
-    if (!m || !b || !autoBase.current) return;
-    const want = theme === 'light' ? b.light : b.dark;
-    const other = theme === 'light' ? b.dark : b.light;
-    if (m.hasLayer(want)) return;
-    if (m.hasLayer(other)) m.removeLayer(other);
-    want.addTo(m);
-  }, [theme]);
 
   // ── transit overlay ──
   const lastTransit = useRef<{ box: BBox; busStops: boolean } | null>(null);
@@ -241,7 +214,6 @@ export default function MapView() {
       if (!m.hasLayer(layer)) layer.addTo(m);
     };
     if (live) {
-      autoBase.current = false;
       setBase(b.satellite);
       if (!m.hasLayer(group)) {
         group.addTo(m);
@@ -250,9 +222,7 @@ export default function MapView() {
       liveFollow.current = true;
       loadTransitRef.current();
     } else if (m.hasLayer(b.satellite)) {
-      autoBase.current = true;
-      setBase(document.documentElement.dataset.theme === 'light' ||
-        (!document.documentElement.dataset.theme && window.matchMedia('(prefers-color-scheme: light)').matches) ? b.light : b.dark);
+      setBase(b.streets);
       if (transitAddedByLive.current) {
         m.removeLayer(group);
         group.clearLayers();

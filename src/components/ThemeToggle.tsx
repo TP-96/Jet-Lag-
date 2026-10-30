@@ -3,9 +3,9 @@
 import { setThemePref, useTheme, type ThemePref } from '@/lib/theme';
 
 const OPTIONS: [ThemePref, string][] = [
-  ['system', '📱 Auto'],
-  ['light', '☀️ Light'],
-  ['dark', '🌙 Dark'],
+  ['system', 'Auto'],
+  ['light', 'Light'],
+  ['dark', 'Dark'],
 ];
 
 export default function ThemeToggle() {
