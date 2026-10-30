@@ -174,9 +174,9 @@ h1, h2, h3 { margin: 0; }
 
 /* ── map ── */
 .map { position: absolute; inset: 0; }
-.map-controls { position: absolute; right: 10px; bottom: 14px; z-index: 500; display: grid; gap: 8px; }
+.map-controls { position: absolute; right: 10px; bottom: 30px; z-index: 500; display: grid; gap: 8px; }
 .map-controls .btn:not(.primary) { background: var(--glass); backdrop-filter: blur(6px); }
-.map-legend { position: absolute; left: 10px; top: 10px; z-index: 500; background: var(--glass); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; font-size: 12px; max-width: 70%; }
+.map-legend { position: absolute; left: 10px; top: 10px; z-index: 500; display: grid; gap: 3px; background: var(--glass); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; font-size: 12px; max-width: 70%; }
 .pin { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
 .pin.me { animation: pulse 2s infinite; }
 .pin.stale { opacity: .5; filter: grayscale(.6); }
@@ -184,6 +184,11 @@ h1, h2, h3 { margin: 0; }
 .leaflet-marker-icon { transition: transform .9s linear; }
 .leaflet-zoom-anim .leaflet-marker-icon, .leaflet-dragging .leaflet-marker-icon { transition: none; }
 .leaflet-container { background: var(--map-bg); font-family: inherit; }
+.leaflet-tooltip.pin-label { background: rgba(0,0,0,.72); color: #fff; border: 0; box-shadow: none; font-weight: 700; font-size: 12px; padding: 1px 7px; border-radius: 999px; }
+.leaflet-tooltip.pin-label::before { display: none; }
+.live-badge { display: flex; align-items: center; gap: 6px; font-weight: 800; letter-spacing: .04em; }
+.live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); animation: live-pulse 1.4s ease-in-out infinite; }
+@keyframes live-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
 .leaflet-tooltip { background: var(--bg2); color: var(--text); border: 1px solid var(--line); }
 
 /* ── chat ── */

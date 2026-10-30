@@ -14,6 +14,7 @@ The longest hide wins.
 | | |
 |---|---|
 | 🗺️ **Live tracking** | Every phone shares its GPS. Seekers see each other live; the **hider's location is secret** (enforced in the database) until the round ends. |
+| 🛰️ **Live view** | One tap switches to satellite imagery with every bus, tram, subway and train line and station drawn on top from live OpenStreetMap data. It shows name labels on every visible player and keeps the whole team in frame as people move. |
 | ❓ **Question deck** | Matching, Measuring, Thermometer, Radar, Tentacles and Photos. The pool scales with game size, and each question can be asked once per round. |
 | 📡 **Auto-answers** | Radar and thermometer questions are answered from the hider's GPS and drawn on the seekers' map as deduction overlays. |
 | 🃏 **Hider deck** | 100 cards: 55 time bonuses, 21 power-ups (Veto, Randomize, Discard/Draw, Duplicate, Move…) and 24 curses. Draw X and keep Y, with a hand limit of 6. |
@@ -98,7 +99,7 @@ npx cap open ios
 ## Tech
 - Next.js 15 (App Router) + React 19 + TypeScript. Everything runs client-side, so it hosts anywhere and exports statically.
 - Supabase: Postgres + row-level security, Realtime, anonymous auth and Storage.
-- Leaflet with OpenStreetMap / CARTO / ÖPNVKarte transit tiles.
+- Leaflet with OpenStreetMap / CARTO / ÖPNVKarte tiles, Esri World Imagery for satellite, and transit routes/stops from OpenStreetMap via the Overpass API.
 - Sounds are synthesised with Web Audio, so there are no audio assets.
 
 ```
@@ -117,4 +118,5 @@ npm run lint      # typecheck
 - **Fair play.** The hider's location and deck can't be read by seekers through the API.
   Game-state changes are trusted among players, which is fine for a friends' game.
 - Chat is private to game members but **not end-to-end encrypted** like Signal.
-- Map tiles come from free community servers. For heavy use, switch to a keyed provider (e.g. MapTiler) in `MapView.tsx`.
+- Map tiles and transit data come from free community servers (OSM, CARTO, Esri, Overpass). They're fine for a friends' game. For heavy use, switch to a keyed provider (e.g. MapTiler) in `MapView.tsx`.
+- OpenStreetMap has no aerial photos, so satellite imagery comes from Esri. The transit lines on top are OpenStreetMap data, so they're only as complete as your city's OSM mapping.
