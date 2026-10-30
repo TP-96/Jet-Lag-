@@ -1,3 +1,5 @@
+import type { Boundary } from './geofence';
+
 export type GameSize = 'small' | 'medium' | 'large';
 export type Units = 'metric' | 'imperial';
 
@@ -47,6 +49,8 @@ export interface GameSettings {
   answerMinutes: number;
   /** Free-form note shown in the lobby, e.g. "HSR buses + GO train only, no cabs". */
   transitRules: string;
+  /** Play area everyone must stay inside (null = anywhere). */
+  boundary: Boundary | null;
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -54,6 +58,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   hiderSeesSeekers: false,
   answerMinutes: 5,
   transitRules: 'Public transit and walking only. No cabs, bikes, scooters or rideshare.',
+  boundary: null,
 };
 
 export function formatDistance(m: number, units: Units): string {

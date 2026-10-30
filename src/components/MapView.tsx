@@ -4,6 +4,7 @@ import L from 'leaflet';
 import { useEffect, useRef, useState } from 'react';
 import { SIZES, formatDistance } from '@/lib/game/config';
 import { thermometerExcludedPolygon } from '@/lib/game/geo';
+import { isValidBoundary, pointInBoundary } from '@/lib/game/geofence';
 import { useTheme } from '@/lib/theme';
 import { MODE_WEIGHT, contains, fetchTransit, padBBox, type BBox, type TransitData } from '@/lib/transit';
 import { useGameCtx } from './GameContext';
@@ -79,6 +80,8 @@ export default function MapView() {
   const { theme } = useTheme();
   const qLayer = useRef<L.LayerGroup | null>(null);
   const zoneLayer = useRef<L.LayerGroup | null>(null);
+  const boundaryLayer = useRef<L.LayerGroup | null>(null);
+  const boundary = isValidBoundary(game.settings.boundary) ? game.settings.boundary : null;
   const centred = useRef(false);
   const [follow, setFollow] = useState(false);
   const units = game.settings.units;
@@ -151,6 +154,7 @@ export default function MapView() {
     m.on('overlayremove', onOverlay);
     m.on('moveend', () => loadTransit());
     L.control.zoom({ position: 'topright' }).addTo(m);
+    boundaryLayer.current = L.layerGroup().addTo(m);
     playersLayer.current = L.layerGroup().addTo(m);
     qLayer.current = L.layerGroup().addTo(m);
     zoneLayer.current = L.layerGroup().addTo(m);
@@ -394,6 +398,28 @@ export default function MapView() {
     }
   }, [questions, game.round, units]);
 
+  // Play area: shade everything outside it and outline the edge.
+  const boundaryKey = boundary ? JSON.stringify(boundary.points) : '';
+  useEffect(() => {
+    const g = boundaryLayer.current;
+    if (!g) return;
+    g.clearLayers();
+    if (!boundary) return;
+    const world: L.LatLngTuple[] = [
+      [85, -180],
+      [85, 180],
+      [-85, 180],
+      [-85, -180],
+    ];
+    L.polygon([world, boundary.points], { stroke: false, fillColor: '#000', fillOpacity: 0.38, interactive: false }).addTo(g);
+    L.polygon(boundary.points, { color: '#ffb800', weight: 3, dashArray: '10 6', fill: false, interactive: false }).addTo(g);
+    if (!position && map.current && !centred.current) {
+      map.current.fitBounds(L.latLngBounds(boundary.points));
+    }
+    // boundaryKey captures the geometry; position only matters for the first framing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boundaryKey]);
+
   // Hider's private hiding zone
   const zone = hiderState?.state.zone;
   useEffect(() => {
@@ -414,6 +440,8 @@ export default function MapView() {
 
   const setZone = async () => {
     if (!position) return toast('Waiting for GPS…');
+    if (boundary && !pointInBoundary({ lat: position.coords.latitude, lng: position.coords.longitude }, boundary))
+      return toast(`🚫 You're outside the play area (${boundary.name}). Your hiding zone must be inside it.`);
     if (!confirm(`Set your hiding zone here? It's a ${formatDistance(SIZES[game.size].zoneRadiusM, units)} radius around this point — stand at your transit station.`)) return;
     await mutateHider((s) => ({ ...s, zone: { lat: position.coords.latitude, lng: position.coords.longitude } }));
     toast('📍 Hiding zone set.');

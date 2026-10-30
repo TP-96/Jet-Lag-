@@ -2,10 +2,12 @@
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { beginSeeking, joinGame, recordRound, saveHiderState } from '@/lib/actions';
+import { beginSeeking, joinGame, recordRound, saveHiderState, systemMessage } from '@/lib/actions';
 import { SIZES } from '@/lib/game/config';
 import { cardDef, handTimeBonus, newHiderState, type HiderState } from '@/lib/game/deck';
 import { haversine } from '@/lib/game/geo';
+import { distanceToEdge, isValidBoundary, pointInBoundary } from '@/lib/game/geofence';
+import { formatDistance } from '@/lib/game/config';
 import { loadProfile, rememberGame } from '@/lib/profile';
 import { sounds, vibrate } from '@/lib/sounds';
 import { supabase } from '@/lib/supabase';
@@ -160,6 +162,30 @@ export default function GameScreen({ code }: { code: string }) {
     recordRound(game, handTimeBonus(hiderState.state.hand, game.size)).catch(() => {});
   }, [game, isHider, hiderState, rounds]);
 
+  // ── play area (geofence) ──
+  const boundary = game && isValidBoundary(game.settings.boundary) ? game.settings.boundary : null;
+  const here = position ? { lat: position.coords.latitude, lng: position.coords.longitude } : null;
+  // Ignore fixes so inaccurate they can't tell which side of the line you're on.
+  const outsideBy =
+    boundary && here && !pointInBoundary(here, boundary) ? Math.max(0, distanceToEdge(here, boundary) - (position?.coords.accuracy ?? 0)) : 0;
+  const outsideSince = useRef<number | null>(null);
+  const announced = useRef(false);
+  useEffect(() => {
+    if (!game || !myPlayer || !inRound) return;
+    if (outsideBy <= 0) {
+      if (announced.current) systemMessage(game.id, `✅ ${myPlayer.name} is back inside the play area.`).catch(() => {});
+      outsideSince.current = null;
+      announced.current = false;
+      return;
+    }
+    outsideSince.current ??= Date.now();
+    if (!announced.current && Date.now() - outsideSince.current > 20_000) {
+      announced.current = true;
+      vibrate([300, 100, 300]);
+      systemMessage(game.id, `⚠️ ${myPlayer.name} left the play area!`).catch(() => {});
+    }
+  }, [outsideBy, now, game, myPlayer, inRound]);
+
   // ── notifications ──
   const seen = useRef<{ q: Map<string, string>; e: Set<string>; m: Set<string>; ready: boolean }>({ q: new Map(), e: new Set(), m: new Set(), ready: false });
   const player = useCallback((id: string | null | undefined) => players.find((p) => p.user_id === id), [players]);
@@ -292,6 +318,11 @@ export default function GameScreen({ code }: { code: string }) {
             <div className="banner warn">🚉 Get to a transit station, then set your hiding zone on the Map tab.</div>
           )}
           {outsideZone && <div className="banner danger">⚠️ You are outside your hiding zone! Get back inside.</div>}
+          {outsideBy > 0 && (
+            <div className="banner danger">
+              🚧 You’re {formatDistance(outsideBy, game.settings.units)} outside the play area ({boundary?.name}). Head back in!
+            </div>
+          )}
           {isHider && game.status === 'endgame' && <div className="banner danger">🚨 ENDGAME — do not move!</div>}
           {moving && (
             <div className="banner info">

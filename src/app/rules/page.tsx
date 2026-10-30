@@ -34,6 +34,13 @@ export default function Rules() {
         <li>Keep the app open so your location is shared. Seekers can see each other; the hider’s location stays secret until the round ends.</li>
       </ul>
 
+      <h2>Play area</h2>
+      <p>
+        The host can set a play area (geofence), such as the whole City of Toronto, the old city, downtown, a circle, or a custom shape drawn on the map.
+        Everything outside it is shaded on the map. Everyone must stay inside it, and the hider’s zone must be inside it too. If you’re outside for
+        more than 20 seconds, the group is told.
+      </p>
+
       <h2>A round</h2>
       <ol>
         <li>

@@ -19,6 +19,7 @@ The longest hide wins.
 | 📡 **Auto-answers** | Radar and thermometer questions are answered from the hider's GPS and drawn on the seekers' map as deduction overlays. |
 | 🃏 **Hider deck** | 100 cards: 55 time bonuses, 21 power-ups (Veto, Randomize, Discard/Draw, Duplicate, Move…) and 24 curses. Draw X and keep Y, with a hand limit of 6. |
 | 💀 **Curses** | Seekers get the curse card, plus a countdown for timed curses. Overflowing Chalice's extra draws are applied automatically. |
+| 🚧 **Play area (geofence)** | The host picks a preset (**Toronto: whole city, old city + East York, or downtown**), a circle around the start, or draws a custom shape. Players outside get a warning, the group is told after 20 s, and the hider can't set a zone outside it. |
 | 📍 **Hiding zone** | The hider locks their zone at a station and gets a warning if they leave it. Seekers can declare Endgame, then Found. |
 | 💬 **Chat** | Signal-style bubbles, replies, reactions and delete-for-everyone. Send photos, GIFs (GIPHY), stickers and locations. There is also a **seekers-only channel** the hider can't read. |
 | 📯 **Trolling** | Air horns, phone buzz plus screen shake, sad trombone, a full-screen "I SEE YOU" flash, confetti and ominous curse sounds. |
@@ -27,6 +28,12 @@ The longest hide wins.
 | 📶 **Tunnel-proof** | When the realtime connection drops (subways!) the app polls live state every second, and everything else every 5 s. |
 | 🎉 **Celebrations** | A "FOUND!" animation with a target lock-on and a count-up of the hider's time. A winner podium with a falling crown when the host ends the game. |
 | 🌗 **Light & dark mode** | Follows the phone's setting by default, or pick Light or Dark on the home screen or Team tab. The map style follows the theme. |
+
+## Playing in Toronto
+- **Small game:** use the *old city + East York* play area (Humber River to Victoria Park, the lake to about Eglinton). It covers Lines 1 and 2 through the core and every streetcar route.
+- **Medium game:** use the *whole city* play area (Etobicoke Creek to the Rouge River, the lake to Steeles). Add "TTC + GO trains inside the city" to the transit rules if you want GO in play.
+- **Quick, intense game:** use *downtown* (Bloor St to the lake, Bathurst St to the Don Valley).
+- The presets are hand-traced and accurate to about 500 m. The host can drag any corner in the editor to fine-tune.
 
 ## Game balance (city edition)
 

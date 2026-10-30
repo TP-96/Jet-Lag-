@@ -363,3 +363,12 @@ h1, h2, h3 { margin: 0; }
   .cel-confetti, .cel-rays, .cel-spot { display: none; }
   .leaflet-marker-icon { transition: none; }
 }
+
+/* ── play area editor ── */
+.editor { position: fixed; inset: 0; z-index: 2600; background: var(--bg); display: grid; grid-template-rows: auto 1fr auto; }
+.editor-head { padding: calc(10px + var(--safe-top)) 12px 8px; display: grid; gap: 8px; background: var(--bg2); border-bottom: 1px solid var(--line); }
+.preset-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.preset-row .btn { white-space: nowrap; }
+.editor-map { min-height: 0; }
+.editor-foot { padding: 10px 12px calc(10px + var(--safe-bottom)); display: grid; gap: 8px; background: var(--bg2); border-top: 1px solid var(--line); }
+.vertex { width: 14px; height: 14px; margin: 4px; border-radius: 50%; background: #ffb800; border: 2px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,.5); }

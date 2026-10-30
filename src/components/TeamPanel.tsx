@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { boundaryArea, isValidBoundary } from '@/lib/game/geofence';
 import { backToLobby, finishGame, leaveGame, resetGame, startRound, updateSettings } from '@/lib/actions';
 import { standings } from '@/lib/game/scoring';
 import { SIZES, formatDistance, formatDuration, type GameSize } from '@/lib/game/config';
@@ -9,8 +11,12 @@ import { useGameCtx, useNow } from './GameContext';
 import ThemeToggle from './ThemeToggle';
 import type { CelebrationKind } from './Celebration';
 
+const BoundaryEditor = dynamic(() => import('./BoundaryEditor'), { ssr: false });
+
 export default function TeamPanel({ onCelebrate }: { onCelebrate: (k: CelebrationKind) => void }) {
-  const { game, players, rounds, isHost, me, toast, locations, locStatus } = useGameCtx();
+  const { game, players, rounds, isHost, me, toast, locations, locStatus, position } = useGameCtx();
+  const [editingArea, setEditingArea] = useState(false);
+  const boundary = isValidBoundary(game.settings.boundary) ? game.settings.boundary : null;
   const now = useNow(10_000);
   const hidCount = (id: string) => rounds.filter((r) => r.hider_id === id).length;
   const nextUp = [...players].sort((a, b) => hidCount(a.user_id) - hidCount(b.user_id) || a.joined_at.localeCompare(b.joined_at))[0];
@@ -62,6 +68,38 @@ export default function TeamPanel({ onCelebrate }: { onCelebrate: (k: Celebratio
           )}
         </div>
       </div>
+
+      <div className="card stack">
+        <div className="row spread">
+          <h3>🗺️ Play area</h3>
+          {isHost && (game.status === 'lobby' || game.status === 'round_over') && (
+            <button className="btn small" onClick={() => setEditingArea(true)}>
+              {boundary ? 'Edit' : 'Set up'}
+            </button>
+          )}
+        </div>
+        {boundary ? (
+          <div className="small">
+            <b>{boundary.name}</b> · {(boundaryArea(boundary) / 1e6).toFixed(1)} km². Everyone must stay inside, and the hiding zone must be inside it.
+          </div>
+        ) : (
+          <div className="small muted">No boundary — the whole map is in play.{isHost && ' Set one up (e.g. Toronto presets) so nobody wanders off.'}</div>
+        )}
+      </div>
+
+      {editingArea && (
+        <BoundaryEditor
+          initial={boundary}
+          here={position ? { lat: position.coords.latitude, lng: position.coords.longitude } : null}
+          units={game.settings.units}
+          onClose={() => setEditingArea(false)}
+          onSave={async (b) => {
+            setEditingArea(false);
+            await updateSettings(game, { settings: { boundary: b } }).catch((e) => toast(e.message));
+            toast(b ? `🗺️ Play area set: ${b.name}` : 'Play area removed');
+          }}
+        />
+      )}
 
       <div className="card">
         <h3>Players ({players.length})</h3>
