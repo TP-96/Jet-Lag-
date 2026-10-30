@@ -411,10 +411,10 @@ export default function MapView() {
   const setZone = async () => {
     if (!position) return toast('Waiting for GPS…');
     if (boundary && !pointInBoundary({ lat: position.coords.latitude, lng: position.coords.longitude }, boundary))
-      return toast(`🚫 You're outside the play area (${boundary.name}). Your hiding zone must be inside it.`);
+      return toast(`You’re outside the play area (${boundary.name}). Your hiding zone must be inside it.`);
     if (!confirm(`Set your hiding zone here? It's a ${formatDistance(SIZES[game.size].zoneRadiusM, units)} radius around this point — stand at your transit station.`)) return;
     await mutateHider((s) => ({ ...s, zone: { lat: position.coords.latitude, lng: position.coords.longitude } }));
-    toast('📍 Hiding zone set.');
+    toast('Hiding zone set.');
   };
 
   const fitAll = () => {
@@ -434,28 +434,28 @@ export default function MapView() {
             <span className="live-dot" /> LIVE · {locations.length} on map
           </div>
         )}
-        {transitStatus === 'zoom' && <div>🚇 Zoom in to see transit lines</div>}
-        {transitStatus === 'loading' && <div>🚇 Loading transit from OpenStreetMap…</div>}
-        {transitStatus === 'error' && <div>🚇 Transit data unavailable right now</div>}
+        {transitStatus === 'zoom' && <div>Zoom in to see transit lines</div>}
+        {transitStatus === 'loading' && <div>Loading transit lines…</div>}
+        {transitStatus === 'error' && <div>Transit lines unavailable right now</div>}
         {isHider ? (
-          <>🫣 You are hiding. {game.settings.hiderSeesSeekers ? `Seekers visible: ${seekers}` : 'Seekers are hidden from you.'}</>
+          <>You’re hiding. {game.settings.hiderSeesSeekers ? `Seekers visible: ${seekers}` : 'Seekers are hidden from you.'}</>
         ) : game.status === 'lobby' ? (
           <>Everyone’s live location appears here.</>
         ) : (
-          <>🟢 radar yes · 🔴 ruled out · 🟡 other questions</>
+          <span className="legend-keys"><span><i style={{ background: '#2bc07e' }} />Radar yes</span><span><i style={{ background: '#ff4d5e' }} />Ruled out</span><span><i style={{ background: '#ffd400' }} />Other</span></span>
         )}
       </div>
       <div className="map-controls">
         {canSetZone && (
           <button className="btn primary" onClick={setZone}>
-            📍 Set hiding zone here
+            Set hiding zone here
           </button>
         )}
         <button className={`btn small ${live ? 'primary' : ''}`} onClick={() => setLive((v) => !v)} aria-pressed={live}>
-          🛰️ {live ? 'Live on' : 'Live view'}
+          {live ? 'Satellite on' : 'Satellite'}
         </button>
         <button className="btn small" onClick={fitAll}>
-          👥 Fit all
+          Show everyone
         </button>
         <button
           className={`btn small ${follow ? 'primary' : ''}`}
@@ -464,7 +464,7 @@ export default function MapView() {
             if (position && map.current) map.current.setView([position.coords.latitude, position.coords.longitude], Math.max(map.current.getZoom(), 15));
           }}
         >
-          🎯 Me
+          Find me
         </button>
       </div>
     </>

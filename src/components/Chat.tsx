@@ -1,5 +1,7 @@
 'use client';
 
+import Icon from './Icon';
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { deleteMessage, sendMessage, toggleReaction } from '@/lib/actions';
 import { cardDef } from '@/lib/game/deck';
@@ -18,8 +20,8 @@ function time(ts: string) {
 function preview(m: Message | undefined): string {
   if (!m) return 'deleted message';
   if (m.kind === 'text') return m.body ?? '';
-  if (m.kind === 'image') return '📷 Photo';
-  if (m.kind === 'gif') return '🎞️ GIF';
+  if (m.kind === 'image') return 'Photo';
+  if (m.kind === 'gif') return 'GIF';
   if (m.kind === 'sticker') return `${m.body} sticker`;
   return m.body ?? m.kind;
 }
@@ -81,7 +83,7 @@ export default function Chat() {
     if (!position) return toast('No GPS fix yet.');
     await send({
       kind: 'location',
-      body: '📍 My location',
+      body: 'My location',
       meta: { lat: position.coords.latitude, lng: position.coords.longitude },
     });
   }
@@ -90,17 +92,17 @@ export default function Chat() {
     <div className="chat">
       <div className="chan">
         <button className={`btn small ${chan === 'all' ? 'primary' : ''}`} onClick={() => setChannel('all')}>
-          🌍 Everyone
+          Everyone
         </button>
         {!isHider && (
           <button className={`btn small ${chan === 'seekers' ? 'primary' : ''}`} onClick={() => setChannel('seekers')}>
-            🔒 Seekers only
+            Seekers only
           </button>
         )}
       </div>
 
       <div className="msgs" ref={listRef}>
-        {shown.length === 0 && <div className="sys">No messages yet. Start the trash talk. 🗣️</div>}
+        {shown.length === 0 && <div className="sys">No messages yet. Say hi, or start the trash talk.</div>}
         {shown.map((m, i) => {
           if (m.kind === 'system') return <div key={m.id} className="sys">{m.body}</div>;
           const p = player(m.user_id);
@@ -223,25 +225,25 @@ export default function Chat() {
             ))}
             {!isHider && (
               <button onClick={() => (shareLocation(), setTray(null))} title="Share your current location">
-                <span>📍</span>
+                <span><Icon name="pin" /></span>
                 My location
               </button>
             )}
           </div>
         )}
         <div className="bar">
-          <label className="iconbtn" title="Photo">
-            {uploading ? '⏳' : '📷'}
+          <label className="iconbtn" title="Photo" aria-label="Send a photo">
+            {uploading ? <span className="spinner" aria-label="Uploading" /> : <Icon name="camera" />}
             <input type="file" accept="image/*" multiple hidden onChange={(e) => e.target.files && sendPhotos(e.target.files)} />
           </label>
           <button className="iconbtn" title="GIF" onClick={() => setTray(tray === 'gif' ? null : 'gif')} style={{ fontSize: 12, fontWeight: 800 }}>
             GIF
           </button>
-          <button className="iconbtn" title="Stickers" onClick={() => setTray(tray === 'sticker' ? null : 'sticker')}>
-            😜
+          <button className="iconbtn" title="Stickers" aria-label="Stickers" onClick={() => setTray(tray === 'sticker' ? null : 'sticker')}>
+            <Icon name="smile" />
           </button>
-          <button className="iconbtn" title="Troll" onClick={() => setTray(tray === 'troll' ? null : 'troll')}>
-            📯
+          <button className="iconbtn" title="Troll the others" aria-label="Troll the others" onClick={() => setTray(tray === 'troll' ? null : 'troll')}>
+            <Icon name="horn" />
           </button>
           <textarea
             className="input"
@@ -257,7 +259,7 @@ export default function Chat() {
             }}
           />
           <button className="iconbtn send" onClick={sendText} aria-label="Send">
-            ➤
+            <Icon name="send" />
           </button>
         </div>
       </div>
@@ -286,12 +288,12 @@ export default function Chat() {
             </button>
             {menu.body && menu.kind === 'text' && (
               <button className="btn block" onClick={() => (navigator.clipboard?.writeText(menu.body!), setMenu(null))}>
-                📋 Copy
+                Copy
               </button>
             )}
             {menu.user_id === me && (
               <button className="btn danger block" onClick={() => (deleteMessage(menu.id), setMenu(null))}>
-                🗑️ Delete for everyone
+                Delete for everyone
               </button>
             )}
           </div>
@@ -310,7 +312,7 @@ function CardMessage({ cardId }: { cardId: string }) {
   const d = cardDef(cardId);
   return (
     <div className={`gcard ${d.kind}`} style={{ maxWidth: 260, minHeight: 0 }}>
-      <div className="kind">{d.kind === 'curse' ? '💀 Curse cast!' : '⚡ Power-up played'}</div>
+      <div className="kind">{d.kind === 'curse' ? 'Curse cast' : 'Power-up played'}</div>
       <div className="title">{d.name}</div>
       <div className="body">{d.kind === 'curse' ? d.effect : d.kind === 'powerup' ? d.text : ''}</div>
     </div>

@@ -68,7 +68,7 @@ export default function HiderCards() {
           exclude: card,
           run: async (cards) => {
             await mutateHider((st) => beginDraw(discardCards(playCard(st, card), cards), n + 1, n + 1, d.name));
-            await systemMessage(game.id, `♻️ The hider played ${d.name}.`);
+            await systemMessage(game.id, `The hider played ${d.name}.`);
           },
         });
         return;
@@ -76,7 +76,7 @@ export default function HiderCards() {
       case 'draw1expand1':
         await guard(async () => {
           await mutateHider((st) => beginDraw({ ...playCard(st, card), handLimit: st.handLimit + 1 }, 1, 1, d.name));
-          await systemMessage(game.id, '➕ The hider expanded their hand.');
+          await systemMessage(game.id, 'The hider expanded their hand.');
         });
         return;
       case 'duplicate':
@@ -122,7 +122,7 @@ export default function HiderCards() {
           <h3>Your hand</h3>
           <div className="small muted">
             {s.hand.length}/{s.handLimit} cards · {s.deck.length} in deck · bonus held: <b style={{ color: 'var(--ok)' }}>+{bonus} min</b>
-            {s.chaliceRemaining > 0 && ` · 🍷 chalice ×${s.chaliceRemaining}`}
+            {s.chaliceRemaining > 0 && `, chalice ×${s.chaliceRemaining}`}
           </div>
         </div>
       </div>
@@ -146,11 +146,11 @@ export default function HiderCards() {
             <CardView card={open} size={game.size} big />
             {cardDef(open).kind !== 'time' && (
               <button className="btn primary block" disabled={busy || !inPlay} onClick={() => play(open)}>
-                {cardDef(open).kind === 'curse' ? '💀 Cast curse' : '⚡ Play'}
+                {cardDef(open).kind === 'curse' ? 'Cast curse' : 'Play card'}
               </button>
             )}
             <button className="btn block" disabled={busy} onClick={() => discard(open)}>
-              🗑️ Discard
+              Discard
             </button>
             <button className="btn ghost block" onClick={() => setOpen(null)}>
               Close

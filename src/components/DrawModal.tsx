@@ -24,7 +24,7 @@ export function DrawModal() {
     <div className="menu">
       <div className="sheet">
         <h3>
-          🃏 Draw {pending.cards.length}, keep {pending.keep}
+          Draw {pending.cards.length}, keep {pending.keep}
         </h3>
         <p className="small muted">{pending.reason}</p>
         <div className="hand">
@@ -50,7 +50,7 @@ export function OverLimitModal() {
   return (
     <div className="menu">
       <div className="sheet">
-        <h3>✋ Hand limit is {handLimit}</h3>
+        <h3>Hand limit is {handLimit}</h3>
         <p className="small muted">Discard {need} card{need > 1 ? 's' : ''}.</p>
         <div className="hand">
           {hand.map((c) => (

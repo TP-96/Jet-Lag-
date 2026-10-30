@@ -16,20 +16,20 @@ export default function CursesPanel() {
   return (
     <div className="stack">
       <h3>Active curses</h3>
-      {active.length === 0 && <div className="card muted">No active curses. For now. 😈</div>}
+      {active.length === 0 && <div className="card muted">No curses on you right now.</div>}
       {active.map((e) => {
         const d = cardDef(e.card_id);
         return (
           <div key={e.id} className="stack">
             <CardView card={e.card_id} size={game.size} big />
             <div className="row" style={{ justifyContent: 'center' }}>
-              {e.ends_at && <span className="tag">⏳ {formatDuration(new Date(e.ends_at).getTime() - now)} left</span>}
+              {e.ends_at && <span className="tag">{formatDuration(new Date(e.ends_at).getTime() - now)} left</span>}
               {d.kind === 'curse' && !d.durationMin && (
                 <button
                   className="btn small ok"
                   onClick={() => confirm(`Mark ${d.name} as completed / cleared?`) && clearEffect(e.id).catch((err) => toast(err.message))}
                 >
-                  ✅ We completed it
+                  We’ve done it
                 </button>
               )}
             </div>

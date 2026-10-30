@@ -26,7 +26,42 @@ function tone(freq: number, start: number, dur: number, type: OscillatorType = '
   o.stop(a.currentTime + start + dur + 0.05);
 }
 
+/** Short burst of filtered noise: brake hiss, flap clacks. */
+function noise(start: number, dur: number, gain = 0.15, freq = 2000, q = 0.8) {
+  const a = audio();
+  if (!a) return;
+  const len = Math.max(1, Math.floor(a.sampleRate * dur));
+  const buf = a.createBuffer(1, len, a.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  const src = a.createBufferSource();
+  src.buffer = buf;
+  const f = a.createBiquadFilter();
+  f.type = 'bandpass';
+  f.frequency.value = freq;
+  f.Q.value = q;
+  const g = a.createGain();
+  g.gain.setValueAtTime(gain, a.currentTime + start);
+  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + start + dur);
+  src.connect(f).connect(g).connect(a.destination);
+  src.start(a.currentTime + start);
+}
+
 export const sounds = {
+  /** Train pulling in: rising rumble, then a brake hiss. */
+  trainArrive() {
+    [70, 82, 95].forEach((f, i) => tone(f, i * 0.15, 0.6, 'sawtooth', 0.05));
+    noise(0.9, 0.7, 0.12, 3500, 0.6);
+  },
+  /** Two-tone door chime, like a subway platform. */
+  doorChime() {
+    tone(659, 0, 0.5, 'sine', 0.2);
+    tone(523, 0.32, 0.8, 'sine', 0.2);
+  },
+  /** Split-flap board clatter. */
+  flaps(count = 14, every = 0.045) {
+    for (let i = 0; i < count; i++) noise(i * every, 0.03, 0.09, 1800 + Math.random() * 1200, 3);
+  },
   ding() {
     tone(880, 0, 0.15);
     tone(1320, 0.1, 0.25);

@@ -20,10 +20,10 @@ import type { Answer, Question } from '@/lib/types';
 import { useGameCtx, useNow } from './GameContext';
 
 function answerLabel(q: Question): string {
-  if (q.status === 'vetoed') return '🚫 Vetoed';
+  if (q.status === 'vetoed') return 'Vetoed';
   const v = q.answer?.value;
-  if (!v) return q.answer?.photo_url ? '📸' : '…';
-  const map: Record<string, string> = { yes: '✅ Yes', no: '❌ No', closer: '⬇️ Closer', further: '⬆️ Further', hotter: '🔥 Hotter', colder: '🧊 Colder' };
+  if (!v) return q.answer?.photo_url ? 'Photo' : '…';
+  const map: Record<string, string> = { yes: 'Yes', no: 'No', closer: 'Closer', further: 'Further', hotter: 'Hotter', colder: 'Colder' };
   return map[v] ?? v;
 }
 
@@ -38,13 +38,13 @@ export function QuestionLog({ questions }: { questions: Question[] }) {
           <div key={q.id} className="qitem" style={{ borderLeftColor: cat?.color }}>
             <div className="row spread small muted">
               <span>
-                {cat?.icon} {cat?.name} · {player(q.asked_by)?.name ?? 'Seeker'}
+                {cat?.name}, asked by {player(q.asked_by)?.name ?? 'a seeker'}
               </span>
               <span>{new Date(q.asked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
             <div>{q.text}</div>
-            {q.answer?.randomized_from && <div className="small muted">🔀 Randomized by the hider</div>}
-            <div className="qa">{q.status === 'pending' ? '⏳ Waiting for answer…' : answerLabel(q)}</div>
+            {q.answer?.randomized_from && <div className="small muted">The hider randomized this question</div>}
+            <div className="qa">{q.status === 'pending' ? 'Waiting for an answer…' : answerLabel(q)}</div>
             {q.answer?.photo_url && <img src={q.answer.photo_url} alt="answer" />}
           </div>
         );
@@ -105,7 +105,7 @@ function SeekerAsk({ roundQs }: { roundQs: Question[] }) {
         start_lat: start?.lat ?? null,
         start_lng: start?.lng ?? null,
       });
-      await systemMessage(game.id, `❓ ${myPlayer?.name} asked: ${text}`, { event: 'question' });
+      await systemMessage(game.id, `${myPlayer?.name} asked: ${text}`, { event: 'question' });
       if (start) {
         localStorage.removeItem(thermoKey(game.id, game.round));
         setThermo(null);
@@ -123,7 +123,7 @@ function SeekerAsk({ roundQs }: { roundQs: Question[] }) {
     const t = { qid: def.id, ...here };
     localStorage.setItem(thermoKey(game.id, game.round), JSON.stringify(t));
     setThermo(t);
-    toast(`🌡️ Thermometer started. Travel ${formatDistance(def.distanceM!, units)} then ask.`);
+    toast(`Thermometer started. Travel ${formatDistance(def.distanceM!, units)} then ask.`);
   }
 
   const thermoDef = thermo ? QUESTION_BY_ID[thermo.qid] : null;
@@ -132,13 +132,13 @@ function SeekerAsk({ roundQs }: { roundQs: Question[] }) {
   return (
     <div className="stack">
       {pending && <PendingCard q={pending} />}
-      {moving && <div className="banner info">🏃 The hider is moving — you must stay put and can’t ask questions.</div>}
+      {moving && <div className="banner info">The hider is moving. Stay where you are; questions are paused.</div>}
       {game.status === 'hiding' && <div className="banner warn">Questions open when the hiding period ends.</div>}
 
       {thermo && thermoDef && (
         <div className="card stack">
           <div className="row spread">
-            <b>🌡️ Thermometer in progress</b>
+            <b>Thermometer in progress</b>
             <button
               className="btn small ghost"
               onClick={() => {
@@ -228,11 +228,9 @@ function PendingCard({ q }: { q: Question }) {
   return (
     <div className="card stack" style={{ borderColor: cat.color }}>
       <div className="row spread">
-        <b>
-          {cat.icon} {cat.name}
-        </b>
+        <b>{cat.name}</b>
         <span className="tag" style={{ color: left < 0 ? 'var(--danger)' : undefined }}>
-          {left >= 0 ? `⏳ ${formatDuration(left)}` : `⚠️ ${formatDuration(-left)} overdue`}
+          {left >= 0 ? `${formatDuration(left)} left` : `${formatDuration(-left)} overdue`}
         </span>
       </div>
       <div style={{ fontSize: 17 }}>{q.text}</div>
@@ -265,7 +263,7 @@ function HiderAnswer({ q, roundQs }: { q: Question; roundQs: Question[] }) {
       await answerQuestion(q, { ...(q.answer ?? {}), ...answer }, status);
       await systemMessage(
         game.id,
-        status === 'vetoed' ? `🚫 The hider VETOED: ${q.text}` : `💬 ${q.text} → ${answer.photo_url ? '📸 (photo)' : String(answer.value).toUpperCase()}`,
+        status === 'vetoed' ? `The hider vetoed: ${q.text}` : `${q.text} → ${answer.photo_url ? 'photo' : String(answer.value).toUpperCase()}`,
         { event: 'answer', question: q.id },
       );
       await mutateHider((s) => {
@@ -291,7 +289,7 @@ function HiderAnswer({ q, roundQs }: { q: Question; roundQs: Question[] }) {
       const newText = renderQuestionText(next, d ? formatDistance(d, game.settings.units) : undefined);
       await replaceQuestion(q, { question_id: next.id, text: newText, distance_m: d ?? null, answer: { randomized_from: q.question_id } });
       await mutateHider((s) => playCard(s, randomize));
-      await systemMessage(game.id, `🔀 The hider randomized the question! New question: ${newText}`);
+      await systemMessage(game.id, `The hider randomized the question. New question: ${newText}`);
     } catch (e) {
       toast((e as Error).message);
     } finally {
@@ -329,20 +327,20 @@ function HiderAnswer({ q, roundQs }: { q: Question; roundQs: Question[] }) {
       <div className="small muted">{auto ? 'Or answer manually (if GPS is off):' : 'Your answer:'}</div>
       {type === 'yesno' && (
         <div className="answer-grid">
-          <button className="btn" disabled={busy} onClick={() => finish({ value: 'yes' })}>✅ Yes</button>
-          <button className="btn" disabled={busy} onClick={() => finish({ value: 'no' })}>❌ No</button>
+          <button className="btn" disabled={busy} onClick={() => finish({ value: 'yes' })}>Yes</button>
+          <button className="btn" disabled={busy} onClick={() => finish({ value: 'no' })}>No</button>
         </div>
       )}
       {type === 'closerfurther' && (
         <div className="answer-grid">
-          <button className="btn" disabled={busy} onClick={() => finish({ value: 'closer' })}>⬇️ Closer</button>
-          <button className="btn" disabled={busy} onClick={() => finish({ value: 'further' })}>⬆️ Further</button>
+          <button className="btn" disabled={busy} onClick={() => finish({ value: 'closer' })}>Closer</button>
+          <button className="btn" disabled={busy} onClick={() => finish({ value: 'further' })}>Further</button>
         </div>
       )}
       {type === 'hotcold' && (
         <div className="answer-grid">
-          <button className="btn" disabled={busy} onClick={() => finish({ value: 'hotter' })}>🔥 Hotter</button>
-          <button className="btn" disabled={busy} onClick={() => finish({ value: 'colder' })}>🧊 Colder</button>
+          <button className="btn" disabled={busy} onClick={() => finish({ value: 'hotter' })}>Hotter</button>
+          <button className="btn" disabled={busy} onClick={() => finish({ value: 'colder' })}>Colder</button>
         </div>
       )}
       {type === 'text' && (
@@ -355,16 +353,16 @@ function HiderAnswer({ q, roundQs }: { q: Question; roundQs: Question[] }) {
       )}
       {type === 'photo' && (
         <label className="btn primary block">
-          📸 {busy ? 'Uploading…' : 'Take / choose photo'}
+          {busy ? 'Uploading…' : 'Take or choose a photo'}
           <input type="file" accept="image/*" capture="environment" hidden disabled={busy} onChange={(e) => e.target.files?.[0] && sendPhoto(e.target.files[0])} />
         </label>
       )}
       <div className="row">
         <button className="btn block" disabled={busy || !veto} onClick={() => confirm('Play Veto? You still get the card draw.') && finish({ vetoed: true }, 'vetoed')}>
-          🚫 Veto {veto ? '' : '(no card)'}
+          Veto{veto ? '' : ' (no card)'}
         </button>
         <button className="btn block" disabled={busy || !randomize || !!q.answer?.randomized_from} onClick={doRandomize}>
-          🔀 Randomize {randomize ? '' : '(no card)'}
+          Randomize{randomize ? '' : ' (no card)'}
         </button>
       </div>
     </div>
@@ -384,7 +382,7 @@ export default function QuestionsPanel() {
         pending ? (
           <HiderAnswer q={pending} roundQs={roundQs} />
         ) : (
-          <div className="card muted">No pending questions. Enjoy the peace while it lasts. 😌</div>
+          <div className="card muted">No open questions. Stay hidden; the next one will buzz your phone.</div>
         )
       ) : (
         game.status !== 'round_over' && <SeekerAsk roundQs={roundQs} />

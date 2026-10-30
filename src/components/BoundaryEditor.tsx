@@ -90,7 +90,7 @@ export default function BoundaryEditor({
     <div className="editor">
       <div className="editor-head">
         <div className="row spread">
-          <h3>🗺️ Play area</h3>
+          <h3>Play area</h3>
           <button className="btn small ghost" onClick={onClose}>
             ✕
           </button>
@@ -113,7 +113,7 @@ export default function BoundaryEditor({
           <input className="input" style={{ width: 64, minHeight: 34, padding: '4px 8px' }} inputMode="decimal" value={radiusKm} onChange={(e) => setRadiusKm(e.target.value)} />
           {units === 'metric' ? 'km' : 'mi'}
           <button className={`btn small ${drawing ? 'primary' : ''}`} onClick={() => (setDrawing(true), setPoints([]), setName('Custom area'))}>
-            ✏️ Draw my own
+            Draw my own
           </button>
           {drawing && points.length > 0 && (
             <button className="btn small" onClick={() => setPoints((p) => p.slice(0, -1))}>

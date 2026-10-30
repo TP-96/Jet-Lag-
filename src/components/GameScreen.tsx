@@ -10,7 +10,7 @@ import { distanceToEdge, isValidBoundary, pointInBoundary } from '@/lib/game/geo
 import { formatDistance } from '@/lib/game/config';
 import { loadProfile, rememberGame } from '@/lib/profile';
 import { sounds, vibrate } from '@/lib/sounds';
-import { supabase } from '@/lib/supabase';
+import { currentUser, profileFromUser, supabase } from '@/lib/supabase';
 import { useGame } from '@/lib/useGame';
 import { useLocationSharing, useWakeLock } from '@/lib/useLocation';
 import type { Message } from '@/lib/types';
@@ -67,13 +67,16 @@ export default function GameScreen({ code }: { code: string }) {
   // Auto-join with the saved profile when opening a shared link.
   useEffect(() => {
     if (data.loading || !game || !me || myPlayer || joining) return;
-    const profile = loadProfile();
-    if (!profile.name) {
-      window.location.href = `/?join=${code}`;
-      return;
-    }
     setJoining(true);
-    joinGame(code, profile)
+    currentUser()
+      .then((u) => {
+        const profile = profileFromUser(u) ?? loadProfile();
+        if (!profile.name) {
+          window.location.href = `/?join=${code}`;
+          return new Promise<void>(() => {});
+        }
+        return joinGame(code, profile);
+      })
       .then(() => data.reload())
       .catch((e) => toast(String(e.message ?? e)))
       .finally(() => setJoining(false));
@@ -152,7 +155,7 @@ export default function GameScreen({ code }: { code: string }) {
     if (!isHider || !hiderState || hiderState.state.zone || !position) return;
     if (game?.status === 'seeking' || game?.status === 'endgame') {
       mutateHider((s) => ({ ...s, zone: { lat: position.coords.latitude, lng: position.coords.longitude, label: 'Auto-locked' } }));
-      toast('📍 Hiding zone locked at your current position.');
+      toast('Hiding zone locked where you’re standing.');
     }
   }, [isHider, hiderState, position, game?.status, mutateHider, toast]);
 
@@ -174,7 +177,7 @@ export default function GameScreen({ code }: { code: string }) {
   useEffect(() => {
     if (!game || !myPlayer || !inRound) return;
     if (outsideBy <= 0) {
-      if (announced.current) systemMessage(game.id, `✅ ${myPlayer.name} is back inside the play area.`).catch(() => {});
+      if (announced.current) systemMessage(game.id, `${myPlayer.name} is back inside the play area.`).catch(() => {});
       outsideSince.current = null;
       announced.current = false;
       return;
@@ -183,7 +186,7 @@ export default function GameScreen({ code }: { code: string }) {
     if (!announced.current && Date.now() - outsideSince.current > 20_000) {
       announced.current = true;
       vibrate([300, 100, 300]);
-      systemMessage(game.id, `⚠️ ${myPlayer.name} left the play area!`).catch(() => {});
+      systemMessage(game.id, `${myPlayer.name} left the play area.`).catch(() => {});
     }
   }, [outsideBy, now, game, myPlayer, inRound]);
 
@@ -233,14 +236,14 @@ export default function GameScreen({ code }: { code: string }) {
         if (isHider) {
           sounds.question();
           vibrate([200, 100, 200]);
-          toast(`❓ New question: ${q.text}`);
+          toast(`New question: ${q.text}`);
           notify('New question!', q.text);
-        } else if (q.asked_by !== me) toast(`❓ ${player(q.asked_by)?.name ?? 'A seeker'} asked: ${q.text}`);
+        } else if (q.asked_by !== me) toast(`${player(q.asked_by)?.name ?? 'A seeker'} asked: ${q.text}`);
       } else if (prev === 'pending' && q.status !== 'pending' && !isHider) {
         sounds.ding();
         vibrate(150);
-        const a = q.status === 'vetoed' ? 'VETOED 🚫' : q.answer?.photo_url ? '📸 photo received' : q.answer?.value?.toUpperCase();
-        toast(`✅ Answer: ${a}`);
+        const a = q.status === 'vetoed' ? 'Vetoed' : q.answer?.photo_url ? 'Photo received' : q.answer?.value?.toUpperCase();
+        toast(`Answer: ${a}`);
         notify('Question answered', `${q.text} → ${a}`);
       }
     }
@@ -251,7 +254,7 @@ export default function GameScreen({ code }: { code: string }) {
       const d = cardDef(e.card_id);
       sounds.curse();
       vibrate([400, 100, 400]);
-      toast(`${d.kind === 'curse' ? '💀' : '⚡'} ${d.name} played!`);
+      toast(`${d.kind === 'curse' ? 'Curse' : 'Power-up'} played: ${d.name}`);
       notify(d.name, d.kind === 'curse' ? d.effect : 'The hider played a card');
     }
     for (const m of messages) {
@@ -314,20 +317,20 @@ export default function GameScreen({ code }: { code: string }) {
       <div className={`shell ${fx?.action === 'buzz' ? 'shake' : ''}`}>
         <StatusBar now={now} />
         <div>
-          {locStatus === 'denied' && <div className="banner danger">📍 Location blocked — enable it in your browser/app settings to be tracked.</div>}
+          {locStatus === 'denied' && <div className="banner danger">Location is blocked. Turn it on for this site in your phone’s settings so the map can track you.</div>}
           {isHider && game.status === 'hiding' && !zone && (
-            <div className="banner warn">🚉 Get to a transit station, then set your hiding zone on the Map tab.</div>
+            <div className="banner warn">Get to a transit station, then set your hiding zone on the Map tab.</div>
           )}
-          {outsideZone && <div className="banner danger">⚠️ You are outside your hiding zone! Get back inside.</div>}
+          {outsideZone && <div className="banner danger">You’re outside your hiding zone. Get back inside.</div>}
           {outsideBy > 0 && (
             <div className="banner danger">
-              🚧 You’re {formatDistance(outsideBy, game.settings.units)} outside the play area ({boundary?.name}). Head back in!
+              You’re {formatDistance(outsideBy, game.settings.units)} outside the play area ({boundary?.name}). Head back in.
             </div>
           )}
-          {isHider && game.status === 'endgame' && <div className="banner danger">🚨 ENDGAME — do not move!</div>}
+          {isHider && game.status === 'endgame' && <div className="banner danger">Endgame: the seekers are close. Don’t move.</div>}
           {moving && (
             <div className="banner info">
-              🏃 Hider is MOVING — seekers must stay where they are.
+              The hider is moving. Seekers stay where they are.
             </div>
           )}
         </div>

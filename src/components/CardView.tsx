@@ -3,16 +3,6 @@
 import { cardDef } from '@/lib/game/deck';
 import type { GameSize } from '@/lib/game/config';
 
-const POWER_ICON: Record<string, string> = {
-  veto: '🚫',
-  randomize: '🔀',
-  discard1draw2: '♻️',
-  discard2draw3: '♻️',
-  draw1expand1: '➕',
-  duplicate: '👯',
-  move: '🏃',
-};
-
 export function CardView({
   card,
   size,
@@ -40,7 +30,7 @@ export function CardView({
   if (d.kind === 'powerup') {
     return (
       <div className={cls} onClick={onClick}>
-        <div className="kind">{POWER_ICON[d.powerup]} Power-up</div>
+        <div className="kind">Power-up</div>
         <div className="title">{d.name}</div>
         <div className="body">{d.text}</div>
       </div>
