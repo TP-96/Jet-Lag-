@@ -9,9 +9,10 @@ export default function StatusBar({ now }: { now: number }) {
   const { game, isHider, myPlayer, player, players, rounds, toast, live } = useGameCtx();
   const hider = player(game.hider_id);
   const size = SIZES[game.size].label.split(' — ')[0];
-  let label = 'Waiting in the lobby';
-  let clock = game.round > 0 ? `Round ${game.round}` : 'Lobby';
-  let sub = `${size} game`;
+  // In the lobby the board shows the join code, since that's what everyone needs.
+  let label = game.round > 0 ? `Lobby, before round ${game.round + 1}` : 'Game code';
+  let clock = game.code;
+  let sub = `${size} game. Share the code so friends can join.`;
 
   if (game.status === 'hiding' && game.hide_started_at) {
     const end = new Date(game.hide_started_at).getTime() + SIZES[game.size].hidingMinutes * 60_000;
@@ -54,7 +55,11 @@ export default function StatusBar({ now }: { now: number }) {
           <div className="label">{label}</div>
           <div className="clock">{clock}</div>
           <div className="sub">
-            <span className="code" title="Game code">{game.code}</span>
+            {game.status !== 'lobby' && (
+              <span className="code" title="Game code">
+                {game.code}
+              </span>
+            )}
             <span>{sub}</span>
             {!live && <span title="Realtime disconnected — syncing every few seconds">Reconnecting…</span>}
           </div>

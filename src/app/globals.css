@@ -215,7 +215,8 @@ label.field .input { color: var(--text); font-weight: 400; }
 .topbar.phase-seeking { --phase: #2bc07e; }
 .topbar.phase-endgame { --phase: #f04a5e; }
 .topbar.phase-round_over, .topbar.phase-finished { --phase: #5b9bff; }
-.phase { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.phase { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; max-width: 640px; margin: 0 auto; }
+.topbar.phase-lobby .clock { letter-spacing: .12em; color: var(--accent); }
 .phase .label { font-family: var(--f-sign); font-weight: 800; font-size: 20px; line-height: 1.1; color: var(--phase); }
 .topbar.phase-lobby .label { color: #b9c4cf; }
 .phase .clock {
