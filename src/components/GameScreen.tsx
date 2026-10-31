@@ -7,7 +7,7 @@ import { SIZES } from '@/lib/game/config';
 import { cardDef, handTimeBonus, newHiderState, type HiderState } from '@/lib/game/deck';
 import { haversine } from '@/lib/game/geo';
 import { distanceToEdge, isValidBoundary, pointInBoundary } from '@/lib/game/geofence';
-import { formatDistance } from '@/lib/game/config';
+import { formatDistance, hidingMinutesFor } from '@/lib/game/config';
 import { loadProfile, rememberGame } from '@/lib/profile';
 import { sounds, vibrate } from '@/lib/sounds';
 import { currentUser, profileFromUser, supabase } from '@/lib/supabase';
@@ -141,7 +141,7 @@ export default function GameScreen({ code }: { code: string }) {
   const flipping = useRef(false);
   useEffect(() => {
     if (!game || game.status !== 'hiding' || !game.hide_started_at || flipping.current) return;
-    const end = new Date(game.hide_started_at).getTime() + SIZES[game.size].hidingMinutes * 60_000;
+    const end = new Date(game.hide_started_at).getTime() + hidingMinutesFor(game) * 60_000;
     if (now >= end) {
       flipping.current = true;
       beginSeeking(game)

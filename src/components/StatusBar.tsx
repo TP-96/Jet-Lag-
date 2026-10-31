@@ -1,7 +1,7 @@
 'use client';
 
 import { declareEndgame, markFound } from '@/lib/actions';
-import { SIZES, formatDuration } from '@/lib/game/config';
+import { SIZES, formatDuration, hidingMinutesFor } from '@/lib/game/config';
 import { standings } from '@/lib/game/scoring';
 import { useGameCtx } from './GameContext';
 
@@ -15,7 +15,7 @@ export default function StatusBar({ now }: { now: number }) {
   let sub = `${size} game. Share the code so friends can join.`;
 
   if (game.status === 'hiding' && game.hide_started_at) {
-    const end = new Date(game.hide_started_at).getTime() + SIZES[game.size].hidingMinutes * 60_000;
+    const end = new Date(game.hide_started_at).getTime() + hidingMinutesFor(game) * 60_000;
     label = isHider ? 'Time left to hide' : 'Hider is getting away';
     clock = formatDuration(Math.max(0, end - now));
     sub = isHider ? 'Get to a station and set your zone' : 'Seekers stay put until zero';

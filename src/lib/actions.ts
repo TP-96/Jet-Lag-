@@ -1,6 +1,6 @@
 'use client';
 
-import { DEFAULT_SETTINGS, SIZES, type GameSettings, type GameSize } from './game/config';
+import { DEFAULT_SETTINGS, SIZES, formatMinutes, hidingMinutesFor, type GameSettings, type GameSize } from './game/config';
 import type { HiderState } from './game/deck';
 import { ensureUser, supabase } from './supabase';
 import type { Answer, Game, Message, Player, Question } from './types';
@@ -114,8 +114,8 @@ export async function startRound(game: Game, players: Player[], hiderId: string)
       })
       .eq('id', game.id),
   );
-  const mins = SIZES[game.size].hidingMinutes;
-  await systemMessage(game.id, `🏁 Round ${round} started! ${hider?.avatar ?? ''} ${hider?.name ?? 'The hider'} has ${mins} minutes to hide. Seekers: stay put!`, {
+  const mins = hidingMinutesFor(game);
+  await systemMessage(game.id, `Round ${round} started. ${hider?.name ?? 'The hider'} has ${formatMinutes(mins)} to hide. Seekers, stay put.`, {
     event: 'round_start',
   });
 }
@@ -123,7 +123,7 @@ export async function startRound(game: Game, players: Player[], hiderId: string)
 /** Called by any client when the hiding timer runs out. Idempotent. */
 export async function beginSeeking(game: Game) {
   if (game.status !== 'hiding' || !game.hide_started_at) return;
-  const start = new Date(new Date(game.hide_started_at).getTime() + SIZES[game.size].hidingMinutes * 60_000);
+  const start = new Date(new Date(game.hide_started_at).getTime() + hidingMinutesFor(game) * 60_000);
   const res = await supabase()
     .from('games')
     .update({ status: 'seeking', seek_started_at: start.toISOString() })

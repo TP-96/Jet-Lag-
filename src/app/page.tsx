@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { createGame, joinGame } from '@/lib/actions';
 import { useAccount } from '@/lib/account';
-import { SIZES, type GameSize, type Units } from '@/lib/game/config';
+import { SIZES, formatMinutes, type GameSize, type Units } from '@/lib/game/config';
 import { CATEGORIES, CATEGORY_ORDER } from '@/lib/game/questions';
 import { AVATARS, COLORS, loadProfile, saveProfile } from '@/lib/profile';
 import {
@@ -22,6 +22,7 @@ import {
 } from '@/lib/supabase';
 import type { Profile } from '@/lib/actions';
 import ThemeToggle from '@/components/ThemeToggle';
+import HidingTimeRow from '@/components/HidingTimeRow';
 
 const STATUS_LABEL: Record<string, string> = {
   lobby: 'In the lobby',
@@ -197,6 +198,7 @@ export default function Home() {
   const [gameName, setGameName] = useState('');
   const [size, setSize] = useState<GameSize>('small');
   const [units, setUnits] = useState<Units>('metric');
+  const [hideMins, setHideMins] = useState<number | null>(null);
   const [busy, setBusy] = useState<'join' | 'create' | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [games, setGames] = useState<MyGame[]>([]);
@@ -238,7 +240,7 @@ export default function Home() {
     try {
       const p = { ...profile, name: profile.name.trim().slice(0, 24) };
       let c = code.trim().toUpperCase();
-      if (mode === 'create') c = await createGame({ name: gameName.trim() || `${p.name}’s game`, size, settings: { units }, profile: p });
+      if (mode === 'create') c = await createGame({ name: gameName.trim() || `${p.name}’s game`, size, settings: { units, hidingMinutes: hideMins }, profile: p });
       else {
         if (c.length < 4) throw new Error('Type the game code your friend shared.');
         await joinGame(c, p);
@@ -403,9 +405,10 @@ export default function Home() {
                   <b>{SIZES[s].label.split(' — ')[0]}</b>
                   <span className="muted small">{cap(SIZES[s].label.split(' — ')[1] ?? SIZES[s].blurb)}</span>
                 </span>
-                <span className="muted small">{SIZES[s].hidingMinutes >= 120 ? `${SIZES[s].hidingMinutes / 60} h` : `${SIZES[s].hidingMinutes} min`} to hide</span>
+                <span className="muted small">{formatMinutes(SIZES[s].hidingMinutes)} to hide</span>
               </label>
             ))}
+            <HidingTimeRow value={hideMins} sizeDefault={SIZES[size].hidingMinutes} onChange={setHideMins} />
             <div className="item row spread">
               <span>Distances in</span>
               <div className="seg small-seg">

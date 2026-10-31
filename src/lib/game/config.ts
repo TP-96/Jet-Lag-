@@ -51,6 +51,25 @@ export interface GameSettings {
   transitRules: string;
   /** Play area everyone must stay inside (null = anywhere). */
   boundary: Boundary | null;
+  /** Custom hiding time in minutes; null/undefined uses the game size's default. */
+  hidingMinutes?: number | null;
+}
+
+export const MIN_HIDING_MINUTES = 1;
+export const MAX_HIDING_MINUTES = 12 * 60;
+
+/** Minutes the hider gets: the host's custom time if set, otherwise the size default. */
+export function hidingMinutesFor(game: { size: GameSize; settings: Partial<GameSettings> }): number {
+  const custom = game.settings?.hidingMinutes;
+  if (typeof custom === 'number' && Number.isFinite(custom) && custom >= MIN_HIDING_MINUTES) return Math.min(MAX_HIDING_MINUTES, Math.round(custom));
+  return SIZES[game.size].hidingMinutes;
+}
+
+export function formatMinutes(m: number): string {
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  return r ? `${h} h ${r} min` : `${h} h`;
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -59,6 +78,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   answerMinutes: 5,
   transitRules: 'Public transit and walking only. No cabs, bikes, scooters or rideshare.',
   boundary: null,
+  hidingMinutes: null,
 };
 
 export function formatDistance(m: number, units: Units): string {

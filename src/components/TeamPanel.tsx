@@ -10,6 +10,7 @@ import { SIZES, formatDistance, formatDuration, type GameSize } from '@/lib/game
 import { useGameCtx, useNow } from './GameContext';
 import ThemeToggle from './ThemeToggle';
 import Icon from './Icon';
+import HidingTimeRow from './HidingTimeRow';
 import type { CelebrationKind } from './Celebration';
 
 const BoundaryEditor = dynamic(() => import('./BoundaryEditor'), { ssr: false });
@@ -158,7 +159,7 @@ export default function TeamPanel({ onCelebrate }: { onCelebrate: (k: Celebratio
               <span className="grow">
                 <span>Size</span>
                 <span className="muted small">
-                  {SIZES[game.size].hidingMinutes} min to hide, {formatDistance(SIZES[game.size].zoneRadiusM, game.settings.units)} hiding zone
+                  {formatDistance(SIZES[game.size].zoneRadiusM, game.settings.units)} hiding zone
                 </span>
               </span>
               <select value={game.size} onChange={(e) => updateSettings(game, { size: e.target.value as GameSize })}>
@@ -169,6 +170,11 @@ export default function TeamPanel({ onCelebrate }: { onCelebrate: (k: Celebratio
                 ))}
               </select>
             </label>
+            <HidingTimeRow
+              value={game.settings.hidingMinutes}
+              sizeDefault={SIZES[game.size].hidingMinutes}
+              onChange={(m) => updateSettings(game, { settings: { hidingMinutes: m } }).catch((e) => toast(e.message))}
+            />
             <label className="item select-row">
               <span className="grow">Time to answer</span>
               <select value={game.settings.answerMinutes} onChange={(e) => updateSettings(game, { settings: { answerMinutes: Number(e.target.value) } })}>
